@@ -144,8 +144,8 @@ function Man2({
     dwell: 0.35,
     parallax: 4,
     parallaxEase: 0.1,
-    mobilePullback: 1.2,
-    mobileTimelineShift: 0.12,
+    mobilePullback: 1.28,
+    mobileTimelineShift: 0.16,
   }
 
   const eye = {
