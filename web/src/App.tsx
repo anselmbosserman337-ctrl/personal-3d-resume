@@ -1,5 +1,6 @@
-import { Suspense, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
+import { useProgress } from '@react-three/drei'
 import { motion, useScroll, useTransform, type MotionValue } from 'framer-motion'
 import * as THREE from 'three'
 import Scene from './scene/Scene'
@@ -18,6 +19,37 @@ function Backdrop() {
       <planeGeometry args={[600, 300]} />
       <meshBasicMaterial transparent opacity={0} depthWrite={false} />
     </mesh>
+  )
+}
+
+function SceneBackground() {
+  const { progress } = useProgress()
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    if (progress < 100) return
+    const frame = requestAnimationFrame(() => setReady(true))
+    return () => cancelAnimationFrame(frame)
+  }, [progress])
+
+  return (
+    <>
+      <div className="scene-bg">
+        <Canvas
+          shadows={{ type: THREE.PCFShadowMap }}
+          dpr={[1, 1.5]}
+          camera={{ position: [0, 5, 19], fov: 39, near: 0.1, far: 500 }}
+          gl={{ antialias: false, stencil: false, depth: true, toneMapping: THREE.ACESFilmicToneMapping }}
+        >
+          <color attach="background" args={['#D8D5FF']} />
+          <Suspense fallback={null}>
+            <Backdrop />
+            <Scene />
+          </Suspense>
+        </Canvas>
+      </div>
+      <div className={`scene-loading-wash${ready ? ' is-hidden' : ''}`} aria-hidden="true" />
+    </>
   )
 }
 
@@ -127,20 +159,7 @@ export default function App() {
       <LoadingScreen />
 
       {/* 固定的 3D 背景 */}
-      <div className="scene-bg">
-        <Canvas
-          shadows={{ type: THREE.PCFShadowMap }}
-          dpr={[1, 1.5]}
-          camera={{ position: [0, 5, 19], fov: 39, near: 0.1, far: 500 }}
-          gl={{ antialias: false, stencil: false, depth: true, toneMapping: THREE.ACESFilmicToneMapping }}
-        >
-          <color attach="background" args={['#D8D5FF']} />
-          <Suspense fallback={null}>
-            <Backdrop />
-            <Scene />
-          </Suspense>
-        </Canvas>
-      </div>
+      <SceneBackground />
 
       {/* 滚动渐暗蒙层 */}
       <motion.div className="scrim" style={{ opacity: scrimOpacity }} aria-hidden="true" />

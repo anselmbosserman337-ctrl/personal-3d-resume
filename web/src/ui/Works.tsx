@@ -52,7 +52,7 @@ function SectionCard({
       </div>
       <div className="wk-card-cover">
         {cover && !coverError ? (
-          <img src={cover} alt="" onError={() => setCoverError(true)} />
+          <img src={cover} alt="" loading="lazy" decoding="async" onError={() => setCoverError(true)} />
         ) : (
           <div className="wk-card-cover-ph" aria-hidden="true">
             <span className="wk-card-cover-no">{section.no}</span>

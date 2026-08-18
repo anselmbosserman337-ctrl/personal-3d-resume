@@ -45,6 +45,22 @@ canvas {
   pointer-events: none; /* 事件穿透，滚动与视差互不干扰 */
 }
 
+.scene-loading-wash {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    linear-gradient(to top, rgba(48, 47, 78, 0.72), rgba(92, 88, 142, 0.12) 68%),
+    linear-gradient(145deg, #e4d9ff 0%, #d8d5ff 52%, #c9ddff 100%);
+  opacity: 1;
+  transition: opacity 0.8s ease;
+}
+
+.scene-loading-wash.is-hidden {
+  opacity: 0;
+}
+
 .scene-bg canvas {
   width: 100% !important;
   height: 100% !important;
@@ -1550,17 +1566,23 @@ body,
   gap: 0.6em;
 }
 
-/* ---------- 加载遮罩：模型全部加载完成前覆盖全屏（进度环，无文字）---------- */
+/* ---------- 3D 加载指示：不遮挡首屏文字 ---------- */
 .loading-screen {
   position: fixed;
-  inset: 0;
-  z-index: 9999;
+  top: clamp(18px, 3vw, 32px);
+  right: clamp(18px, 3vw, 32px);
+  z-index: 20;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #000000;
+  width: clamp(38px, 5vw, 48px);
+  height: clamp(38px, 5vw, 48px);
+  border: 1px solid rgba(139, 124, 255, 0.24);
+  border-radius: 50%;
+  background: rgba(238, 240, 255, 0.62);
   opacity: 1;
   transition: opacity 0.6s ease;
+  pointer-events: none;
 }
 
 .loading-screen.is-hidden {
@@ -1569,8 +1591,8 @@ body,
 }
 
 .loading-ring {
-  width: clamp(56px, 8vw, 80px);
-  height: clamp(56px, 8vw, 80px);
+  width: 26px;
+  height: 26px;
   animation: lrSpin 2.4s linear infinite;
 }
 
