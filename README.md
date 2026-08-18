@@ -1,4 +1,4 @@
-<h1 align="center">About Sen · 3D 个人简历</h1>
+<h1 align="center"> 3D 个人简历</h1>
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/code-MIT-blue.svg?style=flat" alt="License MIT"></a>
