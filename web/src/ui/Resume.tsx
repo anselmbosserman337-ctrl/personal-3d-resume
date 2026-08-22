@@ -7,6 +7,7 @@ interface ResumeEntry {
   place: string
   role?: string
   points?: string[]
+  image?: string
 }
 const RESUME: Record<'en' | 'zh', { title: string; entries: ResumeEntry[] }> = {
   en: {
@@ -60,6 +61,7 @@ const RESUME: Record<'en' | 'zh', { title: string; entries: ResumeEntry[] }> = {
         place: 'NEPCS · Anhui Province',
         role: 'Third Prize',
         points: ['National English Proficiency Competition for Secondary School Students'],
+        image: `${import.meta.env.BASE_URL}images/english-competition-evidence.png`,
       },
     ],
   },
@@ -114,6 +116,7 @@ const RESUME: Record<'en' | 'zh', { title: string; entries: ResumeEntry[] }> = {
         place: '全国中学生英语能力竞赛 NEPCS',
         role: '安徽省三等奖',
         points: ['持续提升英语阅读、表达与跨文化沟通能力'],
+        image: `${import.meta.env.BASE_URL}images/english-competition-evidence.png`,
       },
     ],
   },
@@ -166,6 +169,16 @@ function Entry({ entry, index }: { entry: ResumeEntry; index: number }) {
               <li key={i}>{p}</li>
             ))}
           </motion.ul>
+        )}
+        {entry.image && (
+          <motion.img
+            className="tl-evidence-image"
+            src={entry.image}
+            alt={`${entry.place} supporting image`}
+            loading="lazy"
+            decoding="async"
+            variants={itemV}
+          />
         )}
       </div>
     </motion.div>

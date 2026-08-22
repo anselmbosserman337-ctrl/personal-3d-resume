@@ -160,7 +160,7 @@ export const SECTION_COVERS: Record<string, string> = {
   economics: `${import.meta.env.BASE_URL}works/covers/economics.png`,
   ai: `${import.meta.env.BASE_URL}works/covers/ai.png`,
   programming: `${import.meta.env.BASE_URL}works/covers/expression.png`,
-  expression: `${import.meta.env.BASE_URL}works/covers/programming.png`,
+  expression: `${import.meta.env.BASE_URL}works/covers/expression-writing.png`,
 }
 
 // 统计一个板块的作品数（items 或 groups 求和），用于索引行 hover 显示

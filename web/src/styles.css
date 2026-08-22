@@ -490,6 +490,15 @@ canvas {
   color: var(--muted);
 }
 
+.tl-evidence-image {
+  display: block;
+  width: min(100%, 360px);
+  height: auto;
+  margin-top: 1.2em;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
 .tl-group {
   margin-top: 1.8em;
 }
