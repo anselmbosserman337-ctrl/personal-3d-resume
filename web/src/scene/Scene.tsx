@@ -1,12 +1,13 @@
 import { Suspense, useMemo, useRef, useEffect, type MutableRefObject } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
-import { useGLTF } from '@react-three/drei'
+import { useGLTF, useTexture } from '@react-three/drei'
 import { EffectComposer, Bloom, DepthOfField, SMAA } from '@react-three/postprocessing'
 import * as THREE from 'three'
 import Env from './Env'
 import { FOCUS_POINTS, FRAMES_PER_NODE } from '../data/focusPoints'
 
 const MODEL_URL = `${import.meta.env.BASE_URL}models/me_meshopt.glb`
+const HERO_BACKGROUND_URL = `${import.meta.env.BASE_URL}scrapbook/hero-scrapbook-full.webp`
 
 useGLTF.preload(MODEL_URL, false, true)
 
@@ -18,30 +19,28 @@ const WORKS_ENTRANCE = 50 // 作品区"入场"（画廊屏幕从底部滑入覆�
 const FPS = 24 // 所有 clip @24fps 共享时间轴；相机动画总帧数运行时从 CameraAction clip 读（见 totalFrames）
 const NODE_LINE = 0.3 // 节点"终点"参考线：条目顶部到达视口该高度(从上 30%)时锁定为该节点
 
-// 上下渐变背景球（包裹相机），两端颜色可调
+// Hero 手帐背景球（包裹相机），保持在人物和所有场景物体后方。
 function GradientBackground() {
-  // glb 相机视角很窄(~23°)，只看到渐变中间一条；陡度把可见窄带拉伸出完整过渡
-  const top = '#e4d9ff'
-  const bottom = '#c9ddff'
-  const lavender = '#d8d5ff'
-  const accent = '#b9aeff'
-  const steep = 1.4
+  const backdrop = useTexture(HERO_BACKGROUND_URL)
+  const gl = useThree((state) => state.gl)
 
   const uniforms = useMemo(
     () => ({
-      uTop: { value: new THREE.Color() },
-      uBottom: { value: new THREE.Color() },
-      uLavender: { value: new THREE.Color() },
-      uAccent: { value: new THREE.Color() },
-      uSteep: { value: 1 },
+      uBackdrop: { value: backdrop },
+      uResolution: { value: new THREE.Vector2(1, 1) },
+      uImageAspect: { value: 1672 / 941 },
     }),
-    []
+    [backdrop]
   )
-  uniforms.uTop.value.set(top)
-  uniforms.uBottom.value.set(bottom)
-  uniforms.uLavender.value.set(lavender)
-  uniforms.uAccent.value.set(accent)
-  uniforms.uSteep.value = steep
+
+  useEffect(() => {
+    backdrop.colorSpace = THREE.SRGBColorSpace
+    backdrop.needsUpdate = true
+  }, [backdrop])
+
+  useFrame(() => {
+    gl.getDrawingBufferSize(uniforms.uResolution.value)
+  })
 
   return (
     <mesh scale={100}>
@@ -58,21 +57,21 @@ function GradientBackground() {
           }
         `}
         fragmentShader={/* glsl */ `
-          uniform vec3 uTop;
-          uniform vec3 uBottom;
-          uniform vec3 uLavender;
-          uniform vec3 uAccent;
-          uniform float uSteep;
-          varying vec3 vDir;
+          uniform sampler2D uBackdrop;
+          uniform vec2 uResolution;
+          uniform float uImageAspect;
+
           void main() {
-            // 以地平线(y=0)为中心按陡度拉伸，narrow-fov 下也能看到完整过渡
-            float t = clamp(vDir.y * uSteep * 0.5 + 0.5, 0.0, 1.0);
-            vec3 color = mix(uBottom, uTop, t);
-            float lavenderGlow = 1.0 - smoothstep(0.18, 0.95, length(vec2(vDir.x * 0.78, vDir.y * 0.55 - 0.08)));
-            float accentGlow = 1.0 - smoothstep(0.06, 0.46, length(vec2(vDir.x + 0.32, vDir.y - 0.38)));
-            color = mix(color, uLavender, lavenderGlow * 0.60);
-            color = mix(color, uAccent, accentGlow * 0.16);
-            gl_FragColor = vec4(color, 1.0);
+            vec2 uv = gl_FragCoord.xy / max(uResolution, vec2(1.0));
+
+            float screenAspect = uResolution.x / max(uResolution.y, 1.0);
+            if (screenAspect > uImageAspect) {
+              uv.y = (uv.y - 0.5) * (uImageAspect / screenAspect) + 0.5;
+            } else {
+              uv.x = (uv.x - 0.5) * (screenAspect / uImageAspect) + 0.5;
+            }
+
+            gl_FragColor = texture2D(uBackdrop, uv);
           }
         `}
       />

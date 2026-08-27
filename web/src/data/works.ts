@@ -47,6 +47,7 @@ export interface WorksLang {
   detailPlaceholder: string
   phImageLabel: string
   phButtonLabel: string
+  coverHint: string
   countLabel: (n: number) => string
   sections: WorkSection[]
 }
@@ -62,6 +63,7 @@ export const WORKS: Record<'zh' | 'en', WorksLang> = {
     detailPlaceholder: '学习与成长方向',
     phImageLabel: '图片 / 视频',
     phButtonLabel: '跳转按钮',
+    coverHint: '点击图片查看详情',
     countLabel: (n) => `${n} 件作品`,
     sections: [
       {
@@ -100,6 +102,20 @@ export const WORKS: Record<'zh' | 'en', WorksLang> = {
           { name: '写作、英语与沟通', meta: '持续积累', tags: ['结构化表达', '协作'], slug: 'expression-writing' },
         ],
       },
+      {
+        id: 'game-dev',
+        no: '05',
+        title: '游戏开发',
+        tagline: '从原型到可玩作品',
+        items: [
+          {
+            name: 'PROJECT NOVA',
+            meta: '2026',
+            tags: ['Game Dev', 'Canvas'],
+            slug: 'project-nova',
+          },
+        ],
+      },
     ],
   },
   en: {
@@ -112,6 +128,7 @@ export const WORKS: Record<'zh' | 'en', WorksLang> = {
     detailPlaceholder: 'Learning and growth direction',
     phImageLabel: 'Image / Video',
     phButtonLabel: 'Link button',
+    coverHint: 'Click image to view details',
     countLabel: (n) => `${n} works`,
     sections: [
       {
@@ -150,6 +167,20 @@ export const WORKS: Record<'zh' | 'en', WorksLang> = {
           { name: 'Writing, English & communication', meta: 'Growing', tags: ['Structure', 'Collaboration'], slug: 'expression-writing' },
         ],
       },
+      {
+        id: 'game-dev',
+        no: '05',
+        title: 'Game Dev',
+        tagline: 'From prototype to playable',
+        items: [
+          {
+            name: 'PROJECT NOVA',
+            meta: '2026',
+            tags: ['Game Dev', 'Canvas'],
+            slug: 'project-nova',
+          },
+        ],
+      },
     ],
   },
 }
@@ -161,6 +192,7 @@ export const SECTION_COVERS: Record<string, string> = {
   ai: `${import.meta.env.BASE_URL}works/covers/ai.png`,
   programming: `${import.meta.env.BASE_URL}works/covers/expression.png`,
   expression: `${import.meta.env.BASE_URL}works/covers/expression-writing-image-one.png`,
+  'game-dev': `${import.meta.env.BASE_URL}works/nova/gallery-composite.jpg`,
 }
 
 // 统计一个板块的作品数（items 或 groups 求和），用于索引行 hover 显示

@@ -5,6 +5,8 @@ import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
 import { WORKS, SECTION_COVERS, type WorkListItem, type WorkSection, type WorksLang } from '../data/works'
 import { getWorkDoc } from '../data/workDocs'
+import CaseStudy from './CaseStudy'
+import { projectNova } from '../data/projectNova'
 
 const EASE = [0.22, 1, 0.36, 1]
 
@@ -43,6 +45,10 @@ function SectionCard({
 }) {
   const [coverError, setCoverError] = useState(false)
   const cover = SECTION_COVERS[section.id]
+  // 封面代表整个板块：点击封面 = 打开该板块首个作品的详情（与右侧清单项一致）
+  const coverItem: WorkListItem | null =
+    section.items?.[0] ??
+    (section.groups?.[0] ? { name: section.groups[0].items[0] } : null)
   return (
     <div className="wk-card">
       <div className="wk-card-head">
@@ -50,14 +56,22 @@ function SectionCard({
         <h3 className="wk-card-title">{section.title}</h3>
         <span className="wk-card-tagline">{section.tagline}</span>
       </div>
-      <div className="wk-card-cover">
-        {cover && !coverError ? (
-          <img src={cover} alt="" loading="lazy" decoding="async" onError={() => setCoverError(true)} />
-        ) : (
-          <div className="wk-card-cover-ph" aria-hidden="true">
-            <span className="wk-card-cover-no">{section.no}</span>
-          </div>
-        )}
+      <div className="wk-card-cover-wrap">
+        <button
+          type="button"
+          className="wk-card-cover"
+          onClick={() => coverItem && onOpen(coverItem)}
+          aria-label={data.coverHint}
+        >
+          {cover && !coverError ? (
+            <img src={cover} alt="" loading="lazy" decoding="async" onError={() => setCoverError(true)} />
+          ) : (
+            <div className="wk-card-cover-ph" aria-hidden="true">
+              <span className="wk-card-cover-no">{section.no}</span>
+            </div>
+          )}
+        </button>
+        <p className="wk-card-cover-cap">{data.coverHint}</p>
       </div>
       <SectionWorks section={section} data={data} onOpen={onOpen} />
     </div>
@@ -249,21 +263,23 @@ export default function Works({ lang, innerRef }: { lang: 'en' | 'zh'; innerRef:
   // 横移到底时「继续下滑」提示渐隐
   const hintOpacity = useTransform(scrollYProgress, [0.85, 1], [1, 0])
 
-  // 详情打开时锁滚动 + ESC 关闭
+  // 详情打开时锁滚动 + ESC 关闭 + 保存/恢复原页面位置
   useEffect(() => {
     if (!active) return
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setActive(null)
     window.addEventListener('keydown', onKey)
     const prev = document.body.style.overflow
+    const savedY = window.scrollY
     document.body.style.overflow = 'hidden'
     return () => {
       window.removeEventListener('keydown', onKey)
       document.body.style.overflow = prev
+      window.scrollTo(0, savedY)
     }
   }, [active])
 
   return (
-    <section className="works" lang={lang} ref={innerRef}>
+    <section className="works" id="works" lang={lang} ref={innerRef}>
       <div
         className="wk-gallery"
         ref={galleryRef}
@@ -287,15 +303,43 @@ export default function Works({ lang, innerRef }: { lang: 'en' | 'zh'; innerRef:
         </div>
       </div>
 
+      {/* ── 打印专用：PROJECT NOVA 摘要（屏幕隐藏，@media print 显示）── */}
+      <div className="nova-print" aria-hidden="true">
+        <h3 className="nova-print-title">{projectNova.name}</h3>
+        <p className="nova-print-cat">{projectNova.category}</p>
+        <div className="nova-print-meta">
+          <span>
+            <b>Type</b> {projectNova.type}
+          </span>
+          <span>
+            <b>Period</b> {projectNova.period}
+          </span>
+          <span>
+            <b>Role</b> {projectNova.role.join(' · ')}
+          </span>
+        </div>
+        <div className="nova-print-tech">
+          {projectNova.techStack.map((t) => (
+            <span key={t.name} className="nova-print-tech-item">
+              {t.name}
+            </span>
+          ))}
+        </div>
+        <p className="nova-print-brief">{projectNova.resultText[0]}</p>
+      </div>
+
       <AnimatePresence>
-        {active && (
-          <WorkDetail
-            key={active.slug || active.name}
-            item={active}
-            data={data}
-            onClose={() => setActive(null)}
-          />
-        )}
+        {active &&
+          (active.slug === 'project-nova' ? (
+            <CaseStudy key="project-nova" onClose={() => setActive(null)} />
+          ) : (
+            <WorkDetail
+              key={active.slug || active.name}
+              item={active}
+              data={data}
+              onClose={() => setActive(null)}
+            />
+          ))}
       </AnimatePresence>
     </section>
   )

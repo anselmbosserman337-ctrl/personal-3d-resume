@@ -8,8 +8,25 @@ import NoiseOverlay from './ui/NoiseOverlay'
 import Resume from './ui/Resume'
 import Skills from './ui/Skills'
 import Works from './ui/Works'
+import Certificates from './ui/Certificates'
+import Contact from './ui/Contact'
+import Navigation from './ui/Navigation'
 import LoadingScreen from './ui/LoadingScreen'
+import LanguageGate from './ui/LanguageGate'
 import { useStore } from './store'
+
+// 语言记忆：仅用简单的 zh / en。首次访问（无此 key）弹语言门；之后记住选择，
+// 但仍保留「更改语言」入口。不会机翻整份简历——英文文案本就已存在于各数据源。
+const LS_LANG = 'portfolio-language'
+
+function readStoredLang(): Lang | null {
+  try {
+    const v = localStorage.getItem(LS_LANG)
+    return v === 'en' || v === 'zh' ? v : null
+  } catch {
+    return null
+  }
+}
 
 function Backdrop() {
   // 点击空白处收起详情
@@ -39,9 +56,8 @@ function SceneBackground() {
           shadows={{ type: THREE.PCFShadowMap }}
           dpr={[1, 1.5]}
           camera={{ position: [0, 5, 19], fov: 39, near: 0.1, far: 500 }}
-          gl={{ antialias: false, stencil: false, depth: true, toneMapping: THREE.ACESFilmicToneMapping }}
+          gl={{ alpha: true, antialias: false, stencil: false, depth: true, toneMapping: THREE.ACESFilmicToneMapping }}
         >
-          <color attach="background" args={['#D8D5FF']} />
           <Suspense fallback={null}>
             <Backdrop />
             <Scene />
@@ -82,19 +98,19 @@ function Hero({ lang, cueOpacity }: { lang: Lang; cueOpacity: MotionValue<number
   })
   // 透明度在 about 顶部升到约 30vh 时归 0：起点 60%→进度 p 时顶部在 0.6×(1−p)，
   // 令 =0.3 解得 p=0.5，故 opacity 区间 [0, 0.5]
-  const blur = useTransform(scrollYProgress, [0, 0.5], ['blur(0px)', 'blur(16px)'])
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0])
   // 视差：标题上升更快、字距随滚动拉开；正文上升慢一点
   const titleY = useTransform(scrollYProgress, [0, 1], [0, -96])
   const bodyY = useTransform(scrollYProgress, [0, 1], [0, -52])
   const titleSpacing = useTransform(scrollYProgress, [0, 1], ['0.01em', '0.42em'])
   return (
-    <section className="hero">
+    <section className="hero" id="home">
       <motion.div
         className="about"
+        id="about"
         lang={lang}
         ref={aboutRef}
-        style={{ filter: blur, opacity }}
+        style={{ opacity }}
       >
         {/* 入场动画放内层，避免其 fill 锁住 opacity 覆盖外层滚动 opacity */}
         <div className="about-intro">
@@ -120,15 +136,60 @@ function Hero({ lang, cueOpacity }: { lang: Lang; cueOpacity: MotionValue<number
 
 function LangToggle({ lang, onToggle }: { lang: Lang; onToggle: () => void }) {
   return (
-    <button className="lang-toggle" onClick={onToggle} aria-label="切换语言 / Switch language">
-      {lang === 'en' ? '中文' : 'EN'}
+    <button
+      className="lang-toggle"
+      onClick={onToggle}
+      aria-label="更改语言 / Change language"
+      title={lang === 'en' ? '更改语言 / Change language' : '更改语言 / Change language'}
+    >
+      <span className="lang-toggle-glyph" aria-hidden="true">Aあ</span>
+      <span className="lang-toggle-text">{lang === 'en' ? '语言' : 'Language'}</span>
     </button>
   )
 }
 
 export default function App() {
-  const [lang, setLang] = useState<Lang>('zh')
+  const stored = readStoredLang()
+  const [lang, setLang] = useState<Lang>(stored ?? 'zh')
+  // 首次访问（localStorage 无记录）才弹语言门；记住选择后默认不再弹。
+  const [showGate, setShowGate] = useState<boolean>(stored === null)
   const { scrollY } = useScroll()
+
+  // 首屏强制顶部：修复刷新 / 带旧 hash 深链导致的「自动跳到底部」Bug。
+  // 与 PROJECT NOVA Case Study 的 savedY 自恢复无关（那套是显式 JS 控制，不会受影响）。
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [])
+
+  // 语言门开启期间锁顶：背后 3D 继续并行加载，但 Portfolio 内容不可滚动。
+  useEffect(() => {
+    if (showGate) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [showGate])
+
+  // 选择语言 = 以 HOME/Hero 顶部重新进入（即便 3D 未就绪，Hero 文本/背景会先出现）。
+  const chooseLang = (l: Lang) => {
+    try {
+      localStorage.setItem(LS_LANG, l)
+    } catch {
+      /* 忽略隐私模式下的写入失败 */
+    }
+    setLang(l)
+    setShowGate(false)
+    window.scrollTo(0, 0)
+  }
+
+  // 「更改语言」入口：重新打开语言门，同样锁顶并落到 Hero。
+  const openGate = () => {
+    window.scrollTo(0, 0)
+    setShowGate(true)
+  }
   // 作品区蒙层：以作品区顶部从视口底进入到视口中部的进度，驱动 3D 渐暗 + 模糊
   const worksRef = useRef(null)
   const { scrollYProgress: worksProgress } = useScroll({
@@ -138,7 +199,7 @@ export default function App() {
   const fogBg = useTransform(
     worksProgress,
     [0, 1],
-    ['rgba(221, 235, 255, 0)', 'rgba(221, 235, 255, 0.46)']
+    ['rgba(244, 239, 247, 0)', 'rgba(232, 225, 239, 0.26)']
   )
   const fogBlur = useTransform(worksProgress, [0, 1], ['blur(0px)', 'blur(10px)'])
   // 滚动渐暗：离开首屏后压暗 3D 场景，保证履历文字可读
@@ -181,8 +242,11 @@ export default function App() {
         aria-hidden="true"
       /> */}
 
-      {/* 中英切换暂时隐藏，默认中文 */}
-      {/* <LangToggle lang={lang} onToggle={() => setLang((l) => (l === 'en' ? 'zh' : 'en'))} /> */}
+      {/* 语言门：首次访问或「更改语言」时显示，覆盖在加载遮罩之上；3D 在背后并行加载 */}
+      {showGate && <LanguageGate onChoose={chooseLang} />}
+
+      {/* 记住语言后的常驻「更改语言」入口（不强制每次刷新都弹） */}
+      {!showGate && <LangToggle lang={lang} onToggle={openGate} />}
 
       {/* 首屏装饰：发丝内框 + 四角定位标 + 角标元数据（随滚动淡出） */}
       <motion.div className="hero-chrome" style={{ opacity: heroChromeOpacity }} aria-hidden="true">
@@ -205,10 +269,13 @@ export default function App() {
 
       {/* 可滚动内容 */}
       <main className="content">
+        <Navigation />
         <Hero lang={lang} cueOpacity={cueOpacity} />
         <Resume lang={lang} />
         <Skills lang={lang} />
         <Works lang={lang} innerRef={worksRef} />
+        <Certificates lang={lang} />
+        <Contact lang={lang} />
       </main>
     </>
   )

@@ -188,7 +188,7 @@ function Entry({ entry, index }: { entry: ResumeEntry; index: number }) {
 export default function Resume({ lang }: { lang: 'en' | 'zh' }) {
   const data = RESUME[lang]
   return (
-    <section className="resume" lang={lang}>
+    <section className="resume" id="resume" lang={lang}>
       <motion.h2
         className="resume-title"
         initial={{ opacity: 0, y: 20 }}

@@ -4,12 +4,28 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
     <title>乔思萌 | 经济学与 AI 探索</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Mansalva&family=Cormorant+Upright:wght@400;500;600&family=Chiron+GoRound+TC:wght@300;400;500;700&display=swap"
-      rel="stylesheet"
-    />
+    <!-- 首屏滚动修复：在 React/3D 加载前执行，关闭浏览器默认滚动恢复，
+         清除旧 #hash 深链（避免 /#contact 跳锚点），强制首页顶部。
+         注意：PROJECT NOVA Case Study 的 savedY 自恢复逻辑与浏览器恢复机制无关，不受影响。 -->
+    <script>
+      (function () {
+        try { history.scrollRestoration = 'manual'; } catch (e) {}
+        // 去除旧 hash 深链，避免浏览器在初始加载时跳转到锚点（不整页刷新）
+        try {
+          if (location.hash) {
+            history.replaceState(null, '', location.pathname + location.search);
+          }
+        } catch (e) {}
+        var toTop = function () { window.scrollTo(0, 0); };
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', toTop);
+        } else {
+          toTop();
+        }
+        // 双保险：onload 后再纠一次（覆盖个别浏览器片段滚动晚于 DOMContentLoaded 的情况）
+        window.addEventListener('load', toTop);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

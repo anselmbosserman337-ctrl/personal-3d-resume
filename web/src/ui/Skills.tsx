@@ -16,7 +16,7 @@ const SKILLS = {
 export default function Skills({ lang }: { lang: 'en' | 'zh' }) {
   const data = SKILLS[lang]
   return (
-    <section className="skills" lang={lang}>
+    <section className="skills" id="skills" lang={lang}>
       <motion.div
         className="skills-inner"
         initial={{ opacity: 0, y: 20 }}
