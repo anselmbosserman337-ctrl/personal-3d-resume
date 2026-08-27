@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { useState } from 'react'
 import { FOCUS_POINTS } from '../data/focusPoints'
 
 // 履历数据（双语）。英文为译稿，可按需润色。
@@ -136,7 +137,8 @@ const itemV = {
   show: { opacity: 1, y: 0, transition: { duration: 0.75, ease: EASE } },
 }
 
-function Entry({ entry, index }: { entry: ResumeEntry; index: number }) {
+function Entry({ entry, index, lang }: { entry: ResumeEntry; index: number; lang: 'en' | 'zh' }) {
+  const [revealed, setRevealed] = useState(false)
   return (
     <motion.div
       className="tl-entry"
@@ -170,16 +172,41 @@ function Entry({ entry, index }: { entry: ResumeEntry; index: number }) {
             ))}
           </motion.ul>
         )}
-        {entry.image && (
-          <motion.img
-            className="tl-evidence-image"
-            src={entry.image}
-            alt={`${entry.place} supporting image`}
-            loading="lazy"
-            decoding="async"
-            variants={itemV}
-          />
-        )}
+        {entry.image &&
+          (revealed ? (
+            <motion.img
+              className="tl-evidence-image"
+              src={entry.image}
+              alt={`${entry.place} supporting image`}
+              loading="lazy"
+              decoding="async"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, ease: EASE }}
+            />
+          ) : (
+            <motion.button
+              type="button"
+              className="tl-evidence-btn"
+              onClick={() => setRevealed(true)}
+              variants={itemV}
+              aria-expanded={false}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="11" cy="11" r="7" />
+                <line x1="16.5" y1="16.5" x2="21" y2="21" />
+              </svg>
+              {lang === 'zh' ? '点击查看图片' : 'Click to view image'}
+            </motion.button>
+          ))}
       </div>
     </motion.div>
   )
@@ -200,7 +227,7 @@ export default function Resume({ lang }: { lang: 'en' | 'zh' }) {
       </motion.h2>
       <div className="timeline">
         {data.entries.map((e, i) => (
-          <Entry key={i} entry={e} index={i} />
+          <Entry key={i} entry={e} index={i} lang={lang} />
         ))}
       </div>
     </section>

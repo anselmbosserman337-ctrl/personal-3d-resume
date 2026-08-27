@@ -499,6 +499,38 @@ canvas {
   border-radius: 8px;
 }
 
+/* 履历佐证图：默认折叠为「点击查看」按钮，点击后才显示图片 */
+.tl-evidence-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 1.2em;
+  padding: 10px 16px;
+  min-height: 44px;
+  font: inherit;
+  font-size: 13.5px;
+  color: #4b3f6b;
+  background: #f3eefb;
+  border: 1px dashed #b9a9dd;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+}
+.tl-evidence-btn:hover {
+  background: #ece3fb;
+  border-color: #a489d8;
+  transform: translateY(-1px);
+}
+.tl-evidence-btn:focus-visible {
+  outline: 2px solid #8b6fd6;
+  outline-offset: 2px;
+}
+.tl-evidence-btn svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
 .tl-group {
   margin-top: 1.8em;
 }
@@ -2614,6 +2646,16 @@ body {
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.2);
 }
 
+.tl-evidence-btn {
+  color: #e7e0f7;
+  background: rgba(124, 101, 170, 0.18);
+  border-color: rgba(150, 128, 200, 0.5);
+}
+.tl-evidence-btn:hover {
+  background: rgba(124, 101, 170, 0.3);
+  border-color: rgba(170, 150, 220, 0.7);
+}
+
 .skills {
   padding-bottom: 20vh;
   background: linear-gradient(180deg, rgba(13, 16, 38, 0.08), rgba(21, 19, 43, 0.18));
@@ -3151,6 +3193,16 @@ body,
   border: 8px solid rgba(255, 250, 241, 0.82);
   border-radius: 2px;
   box-shadow: 0 10px 24px rgba(72, 58, 95, 0.18);
+}
+
+.tl-evidence-btn {
+  color: #5a4a7d;
+  background: rgba(249, 244, 238, 0.9);
+  border-color: rgba(126, 105, 157, 0.45);
+}
+.tl-evidence-btn:hover {
+  background: #fff;
+  border-color: rgba(126, 105, 157, 0.7);
 }
 
 /* Desktop resume reserves the left third for the fixed 3D character. */
