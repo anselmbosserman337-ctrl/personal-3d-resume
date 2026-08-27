@@ -25,6 +25,14 @@ export default function LanguageGate({ onChoose }: { onChoose: (lang: Lang) => v
         </h1>
         <p className="lang-gate-sub">欢迎来到乔思萌的数字作品集 · Welcome to the digital journal</p>
 
+        <div className="lang-gate-tip" role="note">
+          <span className="lg-tip-label">温馨提示</span>
+          <span className="lg-tip-text">您好！本网站使用了 3D 建模技术，网页加载较慢，可刷新重试。</span>
+          <span className="lg-tip-text-en">
+            Tip: This site uses 3D modeling, so loading may be slow — feel free to refresh if it stalls.
+          </span>
+        </div>
+
         <div className="lang-gate-buttons">
           <button
             ref={zhRef}
