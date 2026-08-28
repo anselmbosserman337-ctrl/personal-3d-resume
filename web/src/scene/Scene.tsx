@@ -14,6 +14,10 @@ const MODEL_URL = `${import.meta.env.BASE_URL}${MODEL_FILE}`
 
 useGLTF.preload(MODEL_URL, false, true)
 
+// 首屏手帐背景图：与模型对齐，模块求值阶段即开始预取（drei 缓存命中，组件内不再重复下载）。
+// 这样语言门浮在上方时，3D 主体 + 背景贴图都已并行下载，选语言后首帧更完整。
+useTexture.preload(HERO_BACKGROUND_URL)
+
 // 聚焦锚点（glb 内 focus-* 空对象），顺序对应履历节点；名单是唯一真源，见 data/focusPoints.ts
 const POINTS = FOCUS_POINTS as readonly string[]
 const M = POINTS.length // 时间轴节点数（= 履历条数），从名单推导，不写死
