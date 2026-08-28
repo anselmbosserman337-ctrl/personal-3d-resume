@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js'
 import * as THREE from 'three'
+import { markCriticalResourceError, markCriticalResourceReady } from '../preloadAssets'
 
 const ENV_URL = `${import.meta.env.BASE_URL}textures/env_lite.hdr`
 const ENV_FALLBACK_URL = `${import.meta.env.BASE_URL}textures/env.hdr`
@@ -51,7 +52,9 @@ export default function Env({
       loadedTexture = nextTexture
       setTexture(nextTexture)
     }
-    environmentTexturePromise.then(accept).catch(() => {})
+    environmentTexturePromise.then(accept).catch((error) => {
+      markCriticalResourceError('environment', error)
+    })
     return () => {
       cancelled = true
       loadedTexture?.dispose()
@@ -71,6 +74,7 @@ export default function Env({
     environmentBlend.current = 0
     scene.environmentIntensity = 0
     scene.environment = texture
+    markCriticalResourceReady('environment')
     return () => {
       scene.environment = null
       scene.environmentIntensity = 0

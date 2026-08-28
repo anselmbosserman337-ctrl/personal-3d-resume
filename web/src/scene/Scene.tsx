@@ -6,6 +6,7 @@ import * as THREE from 'three'
 import Env from './Env'
 import { FOCUS_POINTS, FRAMES_PER_NODE } from '../data/focusPoints'
 import { HERO_BACKGROUND_URL } from '../performanceAssets'
+import { markCriticalResourceReady } from '../preloadAssets'
 
 // Balanced is the production default. The untouched original remains available
 // as a build-time fallback: VITE_MODEL_FILE=models/me_meshopt.glb npm run build.
@@ -43,6 +44,8 @@ function GradientBackground() {
   useEffect(() => {
     backdrop.colorSpace = THREE.SRGBColorSpace
     backdrop.needsUpdate = true
+    const frame = requestAnimationFrame(() => markCriticalResourceReady('hero'))
+    return () => cancelAnimationFrame(frame)
   }, [backdrop])
 
   useFrame(() => {
