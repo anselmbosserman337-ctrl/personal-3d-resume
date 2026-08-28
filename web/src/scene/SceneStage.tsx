@@ -28,10 +28,16 @@ export default function SceneStage({
   modelReady: boolean
   onModelReady: () => void
 }) {
+  // 全屏浮层（作品详情等）打开时暂停渲染：
+  // 1) 浮层带全屏 backdrop-filter 模糊，背后 3D 每帧变化会强制整屏重新模糊，代价极高；
+  // 2) 把 GPU / 主线程完全让给浮层的入场动画与滚动，消除「点击查看详情」的卡顿。
+  const overlayOpen = useStore((s) => s.overlayOpen)
+
   return (
     <>
       <div className="scene-bg">
         <Canvas
+          frameloop={overlayOpen ? 'never' : 'always'}
           shadows={{ type: THREE.PCFShadowMap }}
           dpr={[1, 1.5]}
           camera={{ position: [0, 5, 19], fov: 39, near: 0.1, far: 500 }}

@@ -1380,6 +1380,16 @@ body,
   -webkit-backdrop-filter: blur(6px);
 }
 
+/* 详情 chunk 尚未就绪时的即时反馈层：点击后立刻变暗，不出现无响应空窗。
+   刻意不加 backdrop-filter —— 它只在极慢网络下短暂出现，不值得 blurred 全屏的代价。 */
+.wk-detail-tap {
+  position: fixed;
+  inset: 0;
+  z-index: 64;
+  background: rgba(4, 6, 18, 0.42);
+  pointer-events: none;
+}
+
 .wk-detail {
   position: fixed;
   inset: clamp(16px, 5vh, 56px) clamp(16px, 6vw, 120px);

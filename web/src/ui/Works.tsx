@@ -2,9 +2,30 @@ import { lazy, Suspense, useEffect, useRef, useState, type Ref } from 'react'
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
 import { WORKS, SECTION_COVERS, type WorkListItem, type WorkSection, type WorksLang } from '../data/works'
 import { projectNova } from '../data/projectNova'
+import { useStore } from '../store'
 
-const CaseStudy = lazy(() => import('./CaseStudy'))
-const WorkDetail = lazy(() => import('./WorkDetail'))
+// 详情 chunk 内含 react-markdown，体积较大（~322KB）。若等到点击时才 import，
+// 会经历「下载 → 解析 → 执行」的空窗期，而 Suspense fallback 是 null（画面零反馈），
+// 主观感受就是「点了没反应 / 卡顿」。把 import thunk 抽出来复用：
+// 悬停 / 聚焦任一作品条目、或板块进入视口后的空闲时段就提前拉取，点击时模块已在内存中。
+const importCaseStudy = () => import('./CaseStudy')
+const importWorkDetail = () => import('./WorkDetail')
+const CaseStudy = lazy(importCaseStudy)
+const WorkDetail = lazy(importWorkDetail)
+
+let detailsWarmed = false
+function warmDetails() {
+  if (detailsWarmed) return
+  detailsWarmed = true
+  void importWorkDetail()
+  void importCaseStudy()
+}
+
+// chunk 尚未就绪时的兜底：立刻铺一层暗底，让点击「即时有反馈」，
+// 避免出现毫无响应的空窗期。正常网络下已被上面的预热消除，几乎不会露面。
+function DetailFallback() {
+  return <div className="wk-detail-tap" aria-hidden="true" />
+}
 
 function useNearViewport<T extends Element>() {
   const ref = useRef<T>(null)
@@ -34,11 +55,25 @@ function useNearViewport<T extends Element>() {
 }
 
 // 极简清单的一行：作品名靠左、数据(播放量/标签)靠右、发丝线分隔；整行可点开全屏详情
-function WorkLine({ item, onOpen }: { item: WorkListItem; onOpen: (item: WorkListItem) => void }) {
+function WorkLine({
+  item,
+  onOpen,
+  onWarm,
+}: {
+  item: WorkListItem
+  onOpen: (item: WorkListItem) => void
+  onWarm: () => void
+}) {
   const hasMeta = item.meta || (item.tags && item.tags.length)
   return (
     <li className="wk-line">
-      <button className="wk-line-btn" onClick={() => onOpen(item)}>
+      {/* 悬停 / 键盘聚焦即预热详情 chunk：点击前模块已就绪，点击后即时渲染 */}
+      <button
+        className="wk-line-btn"
+        onClick={() => onOpen(item)}
+        onPointerEnter={onWarm}
+        onFocus={onWarm}
+      >
         <span className="wk-line-name">{item.name}</span>
         {hasMeta && (
           <span className="wk-line-meta">
@@ -61,10 +96,12 @@ function SectionCard({
   section,
   data,
   onOpen,
+  onWarm,
 }: {
   section: WorkSection
   data: WorksLang
   onOpen: (item: WorkListItem) => void
+  onWarm: () => void
 }) {
   const [coverError, setCoverError] = useState(false)
   const cover = SECTION_COVERS[section.id]
@@ -86,6 +123,8 @@ function SectionCard({
           type="button"
           className="wk-card-cover"
           onClick={() => coverItem && onOpen(coverItem)}
+          onPointerEnter={onWarm}
+          onFocus={onWarm}
           aria-label={data.coverHint}
         >
           {cover && isNear && !coverError ? (
@@ -98,7 +137,7 @@ function SectionCard({
         </button>
         <p className="wk-card-cover-cap">{data.coverHint}</p>
       </div>
-      <SectionWorks section={section} data={data} onOpen={onOpen} />
+      <SectionWorks section={section} data={data} onOpen={onOpen} onWarm={onWarm} />
     </div>
   )
 }
@@ -108,17 +147,19 @@ function SectionWorks({
   section,
   data,
   onOpen,
+  onWarm,
 }: {
   section: WorkSection
   data: WorksLang
   onOpen: (item: WorkListItem) => void
+  onWarm: () => void
 }) {
   return (
     <div className="wk-card-body">
       {section.items && (
         <ul className="wk-list">
           {section.items.map((it, i) => (
-            <WorkLine key={i} item={it} onOpen={onOpen} />
+            <WorkLine key={i} item={it} onOpen={onOpen} onWarm={onWarm} />
           ))}
         </ul>
       )}
@@ -129,7 +170,7 @@ function SectionWorks({
             <div className="wk-sub-head">{g.heading}</div>
             <ul className="wk-list">
               {g.items.map((it, i) => (
-                <WorkLine key={i} item={{ name: it }} onOpen={onOpen} />
+                <WorkLine key={i} item={{ name: it }} onOpen={onOpen} onWarm={onWarm} />
               ))}
             </ul>
           </div>
@@ -156,6 +197,23 @@ export default function Works({ lang, innerRef }: { lang: 'en' | 'zh'; innerRef:
   const count = sections.length
 
   const [active, setActive] = useState<WorkListItem | null>(null) // 当前打开详情的作品 item
+  const setOverlayOpen = useStore((s) => s.setOverlayOpen)
+
+  // 空闲时段提前拉取详情 chunk：用户滚到 Works 时模块已就绪，点击即为同步渲染。
+  // 与「悬停预热」互为兜底（触摸设备没有 hover，靠这条保证不卡）。
+  useEffect(() => {
+    const idle = (window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number })
+      .requestIdleCallback
+    if (idle) {
+      const id = idle(() => warmDetails(), { timeout: 2500 })
+      return () => {
+        const cancel = (window as unknown as { cancelIdleCallback?: (h: number) => void }).cancelIdleCallback
+        cancel?.(id)
+      }
+    }
+    const t = window.setTimeout(warmDetails, 1800)
+    return () => window.clearTimeout(t)
+  }, [])
 
   // 竖滚 pin 转横移：测量整排卡片的实际可横移距离（px），竖滚进度 → 横移
   const galleryRef = useRef<HTMLDivElement>(null)
@@ -186,20 +244,32 @@ export default function Works({ lang, innerRef }: { lang: 'en' | 'zh'; innerRef:
   // 横移到底时「继续下滑」提示渐隐
   const hintOpacity = useTransform(scrollYProgress, [0.85, 1], [1, 0])
 
-  // 详情打开时锁滚动 + ESC 关闭 + 保存/恢复原页面位置
+  // 详情打开：锁滚动 + ESC 关闭 + 保存/恢复位置，并在浮层期间暂停 3D
   useEffect(() => {
-    if (!active) return
+    if (!active) {
+      // 关闭：等退场动画播完再恢复 3D，否则退场期间两者仍抢 GPU
+      const t = window.setTimeout(() => setOverlayOpen(false), 460)
+      return () => window.clearTimeout(t)
+    }
+
+    setOverlayOpen(true)
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setActive(null)
     window.addEventListener('keydown', onKey)
-    const prev = document.body.style.overflow
+    const prevOverflow = document.body.style.overflow
+    const prevPadRight = document.body.style.paddingRight
     const savedY = window.scrollY
+    // 锁滚动会让滚动条消失 → 视口变宽 → 触发 resize / ResizeObserver 重测横移距离 →
+    // framer-motion 的 pin 横移重算，这是点击瞬间画面抖动的一大来源。补上滚动条宽度即可消除。
+    const sbw = window.innerWidth - document.documentElement.clientWidth
     document.body.style.overflow = 'hidden'
+    if (sbw > 0) document.body.style.paddingRight = `${sbw}px`
     return () => {
       window.removeEventListener('keydown', onKey)
-      document.body.style.overflow = prev
+      document.body.style.overflow = prevOverflow
+      document.body.style.paddingRight = prevPadRight
       window.scrollTo(0, savedY)
     }
-  }, [active])
+  }, [active, setOverlayOpen])
 
   return (
     <section className="works" id="works" lang={lang} ref={innerRef}>
@@ -213,7 +283,7 @@ export default function Works({ lang, innerRef }: { lang: 'en' | 'zh'; innerRef:
 
           <motion.div className="wk-track" ref={trackRef} style={{ x }}>
             {sections.map((s) => (
-              <SectionCard key={s.id} section={s} data={data} onOpen={setActive} />
+              <SectionCard key={s.id} section={s} data={data} onOpen={setActive} onWarm={warmDetails} />
             ))}
           </motion.div>
 
@@ -251,7 +321,7 @@ export default function Works({ lang, innerRef }: { lang: 'en' | 'zh'; innerRef:
         <p className="nova-print-brief">{projectNova.resultText[0]}</p>
       </div>
 
-      <Suspense fallback={null}>
+      <Suspense fallback={<DetailFallback />}>
         <AnimatePresence>
           {active &&
             (active.slug === 'project-nova' ? (

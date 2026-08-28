@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -25,6 +25,19 @@ export default function WorkDetail({
   const tags = doc ? doc.tags || item.tags : null
   const sub = doc ? [item.meta, doc.role].filter(Boolean).join('  ·  ') : ''
 
+  // react-markdown 解析整篇正文开销不小，且默认每次重渲染都会重新解析。
+  // 固定到正文字符串上做记忆化，避免浮层入场动画期间重复解析造成掉帧。
+  const body = doc?.body
+  const renderedBody = useMemo(
+    () =>
+      body ? (
+        <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+          {body}
+        </ReactMarkdown>
+      ) : null,
+    [body],
+  )
+
   return (
     <>
       <motion.div
@@ -48,7 +61,8 @@ export default function WorkDetail({
 
         {banner && !bannerError ? (
           <div className="wk-detail-banner">
-            <img src={banner} alt={title} onError={() => setBannerError(true)} />
+            {/* decoding="async"：大图解码不再阻塞主线程，避免与入场动画抢帧 */}
+            <img src={banner} alt={title} decoding="async" onError={() => setBannerError(true)} />
           </div>
         ) : (
           <div className="wk-detail-banner is-ph" aria-hidden="true">
@@ -71,12 +85,8 @@ export default function WorkDetail({
             )}
           </header>
 
-          {doc && doc.body ? (
-            <div className="wk-md">
-              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
-                {doc.body}
-              </ReactMarkdown>
-            </div>
+          {renderedBody ? (
+            <div className="wk-md">{renderedBody}</div>
           ) : (
             <>
               <p className="wk-detail-desc">{data.detailPlaceholder}</p>

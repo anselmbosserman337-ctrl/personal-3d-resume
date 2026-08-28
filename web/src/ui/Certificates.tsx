@@ -1,8 +1,17 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { useStore } from '../store'
 import { motion } from 'framer-motion'
 import { CERTIFICATES, type Certificate, type Language } from '../data/certificates'
 
-const CertificateModal = lazy(() => import('./CertificateModal'))
+// 与 Works 详情同理：提前在空闲时段拉取弹窗 chunk，点击时即为已就绪状态
+const importCertificateModal = () => import('./CertificateModal')
+const CertificateModal = lazy(importCertificateModal)
+let modalWarmed = false
+function warmCertificateModal() {
+  if (modalWarmed) return
+  modalWarmed = true
+  void importCertificateModal()
+}
 
 const COPY = {
   zh: {
@@ -64,6 +73,7 @@ function CertificateCard({
         className="certificate-card-surface"
         type="button"
         onClick={onOpen}
+        onPointerEnter={warmCertificateModal}
         onPointerMove={handlePointerMove}
         onPointerLeave={resetTilt}
         aria-label={`${copy.open}: ${certificate.title[lang]}`}
@@ -93,7 +103,34 @@ export default function Certificates({ lang }: { lang: Language }) {
   const scrollFrame = useRef<number | null>(null)
   const mouseDrag = useRef({ active: false, startX: 0, startScrollLeft: 0, moved: false })
   const copy = COPY[lang]
+  const setOverlayOpen = useStore((s) => s.setOverlayOpen)
   const activeCertificate = activeIndex === null ? null : CERTIFICATES[activeIndex]
+
+  // 证书大图浮层打开（含退场）期间暂停 3D：
+  // 既省下 GPU，也避免全屏 backdrop-filter 对实时变化画面反复做模糊。
+  useEffect(() => {
+    if (activeCertificate) {
+      setOverlayOpen(true)
+      return
+    }
+    const t = window.setTimeout(() => setOverlayOpen(false), 460)
+    return () => window.clearTimeout(t)
+  }, [activeCertificate, setOverlayOpen])
+
+  // 空闲时段预热弹窗 chunk（与卡片悬停预热互为兜底）
+  useEffect(() => {
+    const idle = (window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number })
+      .requestIdleCallback
+    if (idle) {
+      const id = idle(() => warmCertificateModal(), { timeout: 3000 })
+      return () => {
+        const cancel = (window as unknown as { cancelIdleCallback?: (h: number) => void }).cancelIdleCallback
+        cancel?.(id)
+      }
+    }
+    const t = window.setTimeout(warmCertificateModal, 2200)
+    return () => window.clearTimeout(t)
+  }, [])
   const changeActive = (direction: number) => {
     setActiveIndex((current) => current === null ? null : (current + direction + CERTIFICATES.length) % CERTIFICATES.length)
   }
@@ -255,7 +292,7 @@ export default function Certificates({ lang }: { lang: Language }) {
       </div>
 
       {activeCertificate && (
-        <Suspense fallback={null}>
+        <Suspense fallback={<div className="wk-detail-tap" aria-hidden="true" />}>
           <CertificateModal
             certificate={activeCertificate}
             index={activeIndex ?? 0}
