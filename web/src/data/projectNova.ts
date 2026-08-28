@@ -1,6 +1,6 @@
 // PROJECT NOVA — Case Study 内容数据（单项目，结构化存储，便于后续维护）。
 // 全部文字以用户提供的真实资料为准，未做任何虚构。
-// 图片：当前仅有 1 张 6 画面总图（gallery-composite.jpg），未裁切；
+// 图片：当前仅有 1 张 6 画面总图（gallery-composite.webp），未裁切；
 // 后续若提供 6 张原图，只需替换 gallery[] 的 thumb 字段并在 CSS 中启用即可。
 
 export interface NovaRoleSection {
@@ -65,7 +65,7 @@ export const projectNova: ProjectNova = {
     'QA',
     'Iteration',
   ],
-  composite: `${BASE}works/nova/gallery-composite.jpg`,
+  composite: `${BASE}works/nova/gallery-composite.webp`,
 
   // ── 01 / PROJECT BACKGROUND ──
   background: [

@@ -23,7 +23,7 @@ export const CERTIFICATES: Certificate[] = [
     category: { zh: '大模型 · 智能体', en: 'LLM · Agent' },
     date: { zh: '有效至 2028.08.01', en: 'Valid through 2028.08.01' },
     thumbnail: `${base}certificates/thumbs/certificate-alibaba-cloud-clouder.webp`,
-    original: `${base}certificates/originals/certificate-alibaba-cloud-clouder.png`,
+    original: `${base}certificates/originals/certificate-alibaba-cloud-clouder.webp`,
     featured: true,
     layout: 'wide',
   },
@@ -34,7 +34,7 @@ export const CERTIFICATES: Certificate[] = [
     category: { zh: '智能体工程', en: 'Agent Engineering' },
     date: { zh: '2026 年 8 月', en: 'August 2026' },
     thumbnail: `${base}certificates/thumbs/certificate-agent-engineer-ant.webp`,
-    original: `${base}certificates/originals/certificate-agent-engineer-ant.png`,
+    original: `${base}certificates/originals/certificate-agent-engineer-ant.webp`,
     featured: true,
   },
   {
@@ -43,7 +43,7 @@ export const CERTIFICATES: Certificate[] = [
     issuer: 'Datawhale',
     category: { zh: '大模型开发', en: 'LLM Development' },
     thumbnail: `${base}certificates/thumbs/certificate-llm-development-datawhale.webp`,
-    original: `${base}certificates/originals/certificate-llm-development-datawhale.png`,
+    original: `${base}certificates/originals/certificate-llm-development-datawhale.webp`,
     featured: true,
   },
   {
@@ -52,7 +52,7 @@ export const CERTIFICATES: Certificate[] = [
     issuer: 'Datawhale × VirtAI Cloud × HAAI',
     category: { zh: '大模型开发', en: 'LLM Development' },
     thumbnail: `${base}certificates/thumbs/certificate-llm-engineer-virtai.webp`,
-    original: `${base}certificates/originals/certificate-llm-engineer-virtai.png`,
+    original: `${base}certificates/originals/certificate-llm-engineer-virtai.webp`,
   },
   {
     id: 'ai-coding-marscode',
@@ -61,7 +61,7 @@ export const CERTIFICATES: Certificate[] = [
     category: { zh: 'AI 编程', en: 'AI Programming' },
     date: { zh: '2026.08.26', en: '2026.08.26' },
     thumbnail: `${base}certificates/thumbs/certificate-ai-coding-marscode.webp`,
-    original: `${base}certificates/originals/certificate-ai-coding-marscode.png`,
+    original: `${base}certificates/originals/certificate-ai-coding-marscode.webp`,
   },
   {
     id: 'ai4s-python',
@@ -70,7 +70,7 @@ export const CERTIFICATES: Certificate[] = [
     category: { zh: 'Python · AI for Science', en: 'Python · AI for Science' },
     date: { zh: '2026.08.26', en: '2026.08.26' },
     thumbnail: `${base}certificates/thumbs/certificate-ai4s-python.webp`,
-    original: `${base}certificates/originals/certificate-ai4s-python.png`,
+    original: `${base}certificates/originals/certificate-ai4s-python.webp`,
   },
   {
     id: 'prompt-engineer-iflytek',
@@ -79,7 +79,7 @@ export const CERTIFICATES: Certificate[] = [
     category: { zh: '提示词工程', en: 'Prompt Engineering' },
     date: { zh: '有效至 2028.08.26', en: 'Valid through 2028.08.26' },
     thumbnail: `${base}certificates/thumbs/certificate-prompt-engineer-iflytek.webp`,
-    original: `${base}certificates/originals/certificate-prompt-engineer-iflytek.png`,
+    original: `${base}certificates/originals/certificate-prompt-engineer-iflytek.webp`,
   },
   {
     id: 'finetuning-engineer',
@@ -88,7 +88,7 @@ export const CERTIFICATES: Certificate[] = [
     category: { zh: '大模型微调', en: 'LLM Fine-tuning' },
     date: { zh: '有效至 2028.08.26', en: 'Valid through 2028.08.26' },
     thumbnail: `${base}certificates/thumbs/certificate-finetuning-engineer.webp`,
-    original: `${base}certificates/originals/certificate-finetuning-engineer.png`,
+    original: `${base}certificates/originals/certificate-finetuning-engineer.webp`,
   },
   {
     id: 'agent-engineer-iflytek',
@@ -97,7 +97,7 @@ export const CERTIFICATES: Certificate[] = [
     category: { zh: '智能体工程', en: 'Agent Engineering' },
     date: { zh: '有效至 2028.08.26', en: 'Valid through 2028.08.26' },
     thumbnail: `${base}certificates/thumbs/certificate-agent-engineer-iflytek.webp`,
-    original: `${base}certificates/originals/certificate-agent-engineer-iflytek.png`,
+    original: `${base}certificates/originals/certificate-agent-engineer-iflytek.webp`,
   },
   {
     id: 'prompt-engineer-spark',
@@ -105,7 +105,7 @@ export const CERTIFICATES: Certificate[] = [
     issuer: 'Datawhale × 讯飞星火',
     category: { zh: '提示词工程', en: 'Prompt Engineering' },
     thumbnail: `${base}certificates/thumbs/certificate-prompt-engineer-spark.webp`,
-    original: `${base}certificates/originals/certificate-prompt-engineer-spark.png`,
+    original: `${base}certificates/originals/certificate-prompt-engineer-spark.webp`,
   },
   {
     id: 'huawei-ai-fundamentals',
@@ -114,6 +114,6 @@ export const CERTIFICATES: Certificate[] = [
     category: { zh: 'AI 基础', en: 'AI Foundations' },
     date: { zh: '有效至 2028.08.25', en: 'Valid through 2028.08.25' },
     thumbnail: `${base}certificates/thumbs/certificate-huawei-ai-fundamentals.webp`,
-    original: `${base}certificates/originals/certificate-huawei-ai-fundamentals.png`,
+    original: `${base}certificates/originals/certificate-huawei-ai-fundamentals.webp`,
   },
 ]

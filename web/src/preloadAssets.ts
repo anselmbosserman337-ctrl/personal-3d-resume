@@ -34,63 +34,60 @@ const heroBytes = HERO_BACKGROUND_URL.includes('hero-scrapbook-mobile')
     ? 133_706
     : 196_272
 
-// 首页滚动时可见的图片（正常优先级，先加载）。
-// 字节数与 public/ 下的实际文件一致，用于让进度条按真实体积加权。
-const HOMEPAGE_IMAGES: ReadonlyArray<{ path: string; bytes: number }> = [
-  { path: 'images/bp.png', bytes: 8_391 },
-  { path: 'images/buzyzheng.png', bytes: 290_268 },
-  { path: 'images/english-competition-image-two.png', bytes: 359_151 },
-  { path: 'images/hotsar.jpg', bytes: 6_760 },
-  { path: 'scrapbook/paper-texture-seamless.webp', bytes: 65_336 },
-  { path: 'scrapbook/polaroid-frame-1.webp', bytes: 112_534 },
-  { path: 'works/covers/ad.jpg', bytes: 161_220 },
-  { path: 'works/covers/ai.png', bytes: 245_951 },
-  { path: 'works/covers/economics.png', bytes: 229_203 },
-  { path: 'works/covers/expression-writing-image-one.png', bytes: 737_849 },
-  { path: 'works/covers/expression.png', bytes: 250_891 },
-  { path: 'works/covers/graphics.jpg', bytes: 157_328 },
-  { path: 'works/covers/maker.jpg', bytes: 92_488 },
-  { path: 'works/covers/product.jpg', bytes: 210_535 },
-  { path: 'works/covers/programming.png', bytes: 572_984 },
+// 阻塞开门的图片：只包含「进入主页就能看到」的部分。
+//
+// 之前把 43 张图（含点击才看的证书原图、详情 banner）全部塞进开门条件，
+// 实测导致进度条十几分钟都走不完，且解码内存高达 290MB。现在改为：
+//   · 进门可见的图 —— 照常等待，且尺寸已优化到显示尺寸的 2 倍（视网膜屏无损）
+//   · 点击才看的图 —— 画质完全不变，改为进门后空闲预热，不再占用开门时间
+// 字节数与 public/ 下的实际文件一致，保证进度条按真实体积加权。
+const BLOCKING_IMAGES: ReadonlyArray<{ path: string; bytes: number }> = [
   { path: 'works/optimized/ai-cover.webp', bytes: 51_368 },
   { path: 'works/optimized/economics-cover.webp', bytes: 47_548 },
   { path: 'works/optimized/expression-writing-cover.webp', bytes: 59_158 },
   { path: 'works/optimized/programming-cover.webp', bytes: 45_226 },
   { path: 'works/optimized/project-nova-cover.webp', bytes: 35_760 },
-  { path: 'works/nova/gallery-composite.jpg', bytes: 237_945 },
-  { path: 'certificates/thumbs/certificate-agent-engineer-ant.webp', bytes: 38_428 },
-  { path: 'certificates/thumbs/certificate-agent-engineer-iflytek.webp', bytes: 56_064 },
-  { path: 'certificates/thumbs/certificate-ai-coding-marscode.webp', bytes: 37_276 },
-  { path: 'certificates/thumbs/certificate-ai4s-python.webp', bytes: 49_570 },
-  { path: 'certificates/thumbs/certificate-alibaba-cloud-clouder.webp', bytes: 40_002 },
-  { path: 'certificates/thumbs/certificate-finetuning-engineer.webp', bytes: 55_726 },
-  { path: 'certificates/thumbs/certificate-huawei-ai-fundamentals.webp', bytes: 24_644 },
-  { path: 'certificates/thumbs/certificate-llm-development-datawhale.webp', bytes: 34_030 },
-  { path: 'certificates/thumbs/certificate-llm-engineer-virtai.webp', bytes: 47_596 },
-  { path: 'certificates/thumbs/certificate-prompt-engineer-iflytek.webp', bytes: 55_906 },
-  { path: 'certificates/thumbs/certificate-prompt-engineer-spark.webp', bytes: 36_060 },
+  { path: 'certificates/thumbs/certificate-agent-engineer-ant.webp', bytes: 28_242 },
+  { path: 'certificates/thumbs/certificate-agent-engineer-iflytek.webp', bytes: 37_244 },
+  { path: 'certificates/thumbs/certificate-ai-coding-marscode.webp', bytes: 28_586 },
+  { path: 'certificates/thumbs/certificate-ai4s-python.webp', bytes: 35_372 },
+  { path: 'certificates/thumbs/certificate-alibaba-cloud-clouder.webp', bytes: 27_798 },
+  { path: 'certificates/thumbs/certificate-finetuning-engineer.webp', bytes: 37_066 },
+  { path: 'certificates/thumbs/certificate-huawei-ai-fundamentals.webp', bytes: 17_252 },
+  { path: 'certificates/thumbs/certificate-llm-development-datawhale.webp', bytes: 26_144 },
+  { path: 'certificates/thumbs/certificate-llm-engineer-virtai.webp', bytes: 34_460 },
+  { path: 'certificates/thumbs/certificate-prompt-engineer-iflytek.webp', bytes: 37_152 },
+  { path: 'certificates/thumbs/certificate-prompt-engineer-spark.webp', bytes: 26_530 },
+  { path: 'scrapbook/paper-texture-seamless.webp', bytes: 6_598 },
+  { path: 'scrapbook/polaroid-frame-1.webp', bytes: 112_534 },
+  { path: 'images/buzyzheng.png', bytes: 290_268 },
+  { path: 'images/bp.png', bytes: 8_391 },
+  { path: 'images/hotsar.jpg', bytes: 6_760 },
 ]
 
-// 点击才查看的证书原图：开门前同样要等它就绪，但用 low 优先级，
-// 不与 3D 人物模型抢带宽（模型先到，原图随后补齐）。
-const CLICK_ONLY_IMAGES: ReadonlyArray<{ path: string; bytes: number }> = [
-  { path: 'certificates/originals/certificate-agent-engineer-ant.png', bytes: 346_365 },
-  { path: 'certificates/originals/certificate-agent-engineer-iflytek.png', bytes: 365_016 },
-  { path: 'certificates/originals/certificate-ai-coding-marscode.png', bytes: 148_570 },
-  { path: 'certificates/originals/certificate-ai4s-python.png', bytes: 452_837 },
-  { path: 'certificates/originals/certificate-alibaba-cloud-clouder.png', bytes: 198_017 },
-  { path: 'certificates/originals/certificate-finetuning-engineer.png', bytes: 363_057 },
-  { path: 'certificates/originals/certificate-huawei-ai-fundamentals.png', bytes: 165_136 },
-  { path: 'certificates/originals/certificate-llm-development-datawhale.png', bytes: 118_646 },
-  { path: 'certificates/originals/certificate-llm-engineer-virtai.png', bytes: 384_353 },
-  { path: 'certificates/originals/certificate-prompt-engineer-iflytek.png', bytes: 363_434 },
-  { path: 'certificates/originals/certificate-prompt-engineer-spark.png', bytes: 319_779 },
+// 点击才查看的图片：画质保持原样（证书 2400px、详情 banner 2000px），
+// 但不在开门时下载；进门后空闲时段再低优先级预热，保证真点开时依然秒开。
+const DEFERRED_IMAGES: ReadonlyArray<string> = [
+  'certificates/originals/certificate-agent-engineer-ant.webp',
+  'certificates/originals/certificate-agent-engineer-iflytek.webp',
+  'certificates/originals/certificate-ai-coding-marscode.webp',
+  'certificates/originals/certificate-ai4s-python.webp',
+  'certificates/originals/certificate-alibaba-cloud-clouder.webp',
+  'certificates/originals/certificate-finetuning-engineer.webp',
+  'certificates/originals/certificate-huawei-ai-fundamentals.webp',
+  'certificates/originals/certificate-llm-development-datawhale.webp',
+  'certificates/originals/certificate-llm-engineer-virtai.webp',
+  'certificates/originals/certificate-prompt-engineer-iflytek.webp',
+  'certificates/originals/certificate-prompt-engineer-spark.webp',
+  'works/covers/ai.webp',
+  'works/covers/economics.webp',
+  'works/covers/expression-writing-image-one.webp',
+  'works/covers/programming.webp',
+  'images/english-competition-image-two.png',
+  'works/nova/gallery-composite.webp',
 ]
 
-const IMAGE_MANIFEST: ReadonlyArray<{ path: string; bytes: number; lowPriority: boolean }> = [
-  ...HOMEPAGE_IMAGES.map((image) => ({ ...image, lowPriority: false })),
-  ...CLICK_ONLY_IMAGES.map((image) => ({ ...image, lowPriority: true })),
-]
+const IMAGE_MANIFEST = BLOCKING_IMAGES
 
 const IMAGE_TOTAL_BYTES = IMAGE_MANIFEST.reduce((sum, image) => sum + image.bytes, 0)
 
@@ -253,36 +250,97 @@ function installHeroTimingObserver() {
   observer.observe({ type: 'resource', buffered: true })
 }
 
-// 预热全部图片并把完成度计入进度条。图片不走 fetch，因此按「每张完成即计入其
-// 体积」累加到聚合资源上——43 张图足以让进度条平滑推进。
+// 预热「进门即可见」的图片并计入进度。
+//
+// 修正了导致「10 分钟没下载完」的四个问题：
+//  1. 限并发（6）——之前 43 张一次性打出，把连接池打满，8.5MB 的 3D 模型被挤到队尾，
+//     总体反而更慢；限并发后模型先下完，总耗时更短。
+//  2. 持有 Image 引用——之前图片只存在局部变量里，未完成的加载可能被 GC 取消，
+//     回调永不触发，进度条会永久卡住（最可能的卡死原因）。
+//  3. 用 decode()——onload 只代表字节到达，不代表可以无成本绘制；
+//     decode() 之后「100%」才真正等于可用，滚动时不会再有解码掉帧。
+//  4. 硬超时——任何异常都不会把访客永久挡在门外。
+const IMAGE_CONCURRENCY = 6
+const IMAGE_TIMEOUT_MS = 20_000
+const pendingImages: HTMLImageElement[] = [] // 持有引用，防止未完成的加载被 GC
+
 function preloadImages() {
   const aggregate = resources.images
   if (aggregate.ready) return
   let settled = 0
   let loaded = 0
+  let stopped = false
 
-  const registerDone = (bytes: number) => {
-    loaded = Math.min(loaded + bytes, aggregate.totalBytes)
-    aggregate.loadedBytes = loaded
-    settled += 1
-    if (settled >= IMAGE_MANIFEST.length) {
-      aggregate.loadedBytes = aggregate.totalBytes
-      aggregate.downloadComplete = true
-      aggregate.ready = true
-    }
+  const finish = () => {
+    if (aggregate.ready) return
+    aggregate.loadedBytes = aggregate.totalBytes
+    aggregate.downloadComplete = true
+    aggregate.ready = true
     publish()
   }
 
-  IMAGE_MANIFEST.forEach(({ path, bytes, lowPriority }) => {
+  const registerDone = (bytes: number) => {
+    if (stopped) return
+    loaded = Math.min(loaded + bytes, aggregate.totalBytes)
+    aggregate.loadedBytes = loaded
+    settled += 1
+    if (settled >= IMAGE_MANIFEST.length) finish()
+    else publish()
+  }
+
+  // 硬超时兜底
+  window.setTimeout(() => {
+    stopped = true
+    finish()
+  }, IMAGE_TIMEOUT_MS)
+
+  let cursor = 0
+  const startNext = () => {
+    if (stopped || cursor >= IMAGE_MANIFEST.length) return
+    const entry = IMAGE_MANIFEST[cursor]
+    cursor += 1
     const image = new Image()
     image.decoding = 'async'
-    // 证书原图低优先级：仍然计入进度、仍然阻塞开门，但不与 3D 模型争夺带宽
-    if (lowPriority && 'fetchPriority' in image) image.fetchPriority = 'low'
-    // 单张失败不阻塞开门：照常计入完成，避免一张 404 让进度条永远停在 99%
-    image.onload = () => registerDone(bytes)
-    image.onerror = () => registerDone(bytes)
-    image.src = absoluteAssetUrl(path)
-  })
+    pendingImages.push(image)
+    const done = () => {
+      registerDone(entry.bytes)
+      startNext() // 完成一个补一个，维持有限并发
+    }
+    image.onload = () => {
+      // decode() 让「100%」代表真正可用，而不是仅代表下载完成
+      const withDecode = image as HTMLImageElement & { decode?: () => Promise<void> }
+      if (typeof withDecode.decode === 'function') {
+        withDecode.decode().then(done, done)
+      } else {
+        done()
+      }
+    }
+    image.onerror = done // 单张失败不阻塞开门
+    image.src = absoluteAssetUrl(entry.path)
+  }
+
+  for (let i = 0; i < IMAGE_CONCURRENCY; i += 1) startNext()
+}
+
+// 进门之后再空闲预热「点击才看」的图：画质完全不变，只是不与开门抢带宽。
+let deferredWarmed = false
+export function warmDeferredImages() {
+  if (deferredWarmed || typeof window === 'undefined') return
+  deferredWarmed = true
+  const run = () => {
+    DEFERRED_IMAGES.forEach((path) => {
+      const image = new Image()
+      image.decoding = 'async'
+      if ('fetchPriority' in image) image.fetchPriority = 'low'
+      pendingImages.push(image)
+      image.src = absoluteAssetUrl(path)
+    })
+  }
+  const idle = (window as unknown as {
+    requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number
+  }).requestIdleCallback
+  if (idle) idle(run, { timeout: 6_000 })
+  else window.setTimeout(run, 3_000)
 }
 
 export function preloadCriticalAssets() {

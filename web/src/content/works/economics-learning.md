@@ -1,6 +1,6 @@
 ---
 title: 经济学学习
-banner: /works/covers/economics.png
+banner: /works/covers/economics.webp
 year: 2026 -
 role: 学习方向
 tags: [微观经济学, 宏观经济学, 金融市场, 数据思维]

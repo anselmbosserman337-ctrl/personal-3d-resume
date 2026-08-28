@@ -6,6 +6,7 @@ import {
   markCriticalResourceError,
   markCriticalResourceReady,
   subscribeCriticalResources,
+  warmDeferredImages,
 } from './preloadAssets'
 
 // These two chunks start in parallel behind the lightweight HTML gate. The
@@ -78,6 +79,12 @@ export default function App() {
     return () => {
       document.body.style.overflow = ''
     }
+  }, [showGate])
+
+  // 进门之后再预热「点击才查看」的图（详情 banner / 证书原图 / 简历佐证图）。
+  // 这些画质完全没动，只是不再占用开门时间——点开时依然即时显示。
+  useEffect(() => {
+    if (!showGate) warmDeferredImages()
   }, [showGate])
 
   // Smoothly catch up to measured progress, never beyond its safe ceiling.
