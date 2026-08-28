@@ -5073,6 +5073,90 @@ body,
   outline-offset: 3px;
 }
 
+/* ---------- 提前进入主页的二次确认 ---------- */
+.lg-confirm {
+  margin-top: 10px;
+  padding: 13px 15px 12px;
+  border: 1px solid rgba(124, 95, 180, 0.28);
+  border-radius: 12px;
+  background: rgba(124, 95, 180, 0.07);
+  text-align: left;
+  animation: lg-confirm-in 0.28s ease both;
+}
+
+@keyframes lg-confirm-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.lg-confirm-title {
+  margin: 0 0 6px;
+  color: #6f559f;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.lg-confirm-body {
+  margin: 0 0 11px;
+  color: #776a96;
+  font-size: 12px;
+  line-height: 1.75;
+}
+
+.lg-confirm-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.lg-confirm-btn {
+  flex: 1 1 0;
+  min-height: 34px;
+  padding: 6px 10px;
+  border-radius: 9px;
+  font-size: 12px;
+  line-height: 1.5;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.lg-confirm-btn.is-yes {
+  border: 1px solid transparent;
+  background: #7c5fb4;
+  color: #fff;
+}
+
+.lg-confirm-btn.is-yes:hover {
+  background: #6f559f;
+}
+
+.lg-confirm-btn.is-no {
+  border: 1px solid rgba(124, 95, 180, 0.34);
+  background: transparent;
+  color: #6f559f;
+}
+
+.lg-confirm-btn.is-no:hover {
+  background: rgba(124, 95, 180, 0.1);
+}
+
+.lg-confirm-btn:focus-visible {
+  outline: 2px solid #7c5fb4;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lg-confirm {
+    animation: none;
+  }
+}
+
 .lang-gate-btn {
   flex: 1 1 0;
   min-width: 0;

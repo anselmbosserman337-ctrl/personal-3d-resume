@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { CriticalResourceSnapshot } from '../preloadAssets'
 
 type Lang = 'en' | 'zh'
@@ -16,6 +16,10 @@ const COPY = {
     ready: '准备完成。',
     partial: '部分内容仍在加载',
     enter: '先进入主页 →',
+    confirmTitle: '确定要提前进入吗？',
+    confirmBody: '图片与 3D 内容尚未加载完成，现在进入可能出现画面空白、动画不完整，观看简历的效果会变差。',
+    confirmYes: '是，直接进入',
+    confirmNo: '否，继续等待',
   },
   en: {
     choose: 'Choose a language',
@@ -28,6 +32,11 @@ const COPY = {
     ready: 'Ready.',
     partial: 'Some content is still loading',
     enter: 'Enter now →',
+    confirmTitle: 'Enter before loading finishes?',
+    confirmBody:
+      'Images and the 3D content are still loading. Entering now may leave blank areas and incomplete animations, which will affect how the portfolio looks.',
+    confirmYes: 'Yes, enter anyway',
+    confirmNo: 'No, keep waiting',
   },
 } as const
 
@@ -66,8 +75,13 @@ export default function LanguageGate({
   canEnterNow: boolean
 }) {
   const zhRef = useRef<HTMLButtonElement>(null)
+  const noRef = useRef<HTMLButtonElement>(null)
+  // 点「先进入主页」不直接跳过：先二次确认，让用户知道体验会打折
+  const [confirmingSkip, setConfirmingSkip] = useState(false)
   const loading = phase !== 'language'
   const turning = phase === 'turning'
+  // 资源一旦全部就绪就会自动开门，此时无需再问
+  const showConfirm = confirmingSkip && !critical.allReady
   const percentage = critical.allReady ? 100 : Math.min(99, Math.max(0, Math.round(progress)))
   const status = getStatus(lang, phase, progress, critical)
   const copy = COPY[lang]
@@ -75,6 +89,11 @@ export default function LanguageGate({
   useEffect(() => {
     if (phase === 'language') zhRef.current?.focus()
   }, [phase])
+
+  // 默认聚焦「否，继续等待」——避免误按回车直接跳过加载
+  useEffect(() => {
+    if (showConfirm) noRef.current?.focus()
+  }, [showConfirm])
 
   return (
     <div
@@ -148,15 +167,49 @@ export default function LanguageGate({
             <p className="lg-loading-status" aria-live="polite" aria-atomic="true">
               {status}
             </p>
-            <button
-              className={`lg-enter-now${canEnterNow ? ' is-visible' : ''}`}
-              type="button"
-              onClick={onEnterNow}
-              tabIndex={canEnterNow ? 0 : -1}
-              aria-hidden={!canEnterNow}
-            >
-              {copy.enter}
-            </button>
+            {showConfirm ? (
+              <div
+                className="lg-confirm"
+                role="alertdialog"
+                aria-modal="true"
+                aria-labelledby="lg-confirm-title"
+                aria-describedby="lg-confirm-body"
+              >
+                <p className="lg-confirm-title" id="lg-confirm-title">
+                  {copy.confirmTitle}
+                </p>
+                <p className="lg-confirm-body" id="lg-confirm-body">
+                  {copy.confirmBody}
+                </p>
+                <div className="lg-confirm-actions">
+                  <button
+                    ref={noRef}
+                    type="button"
+                    className="lg-confirm-btn is-no"
+                    onClick={() => setConfirmingSkip(false)}
+                  >
+                    {copy.confirmNo}
+                  </button>
+                  <button
+                    type="button"
+                    className="lg-confirm-btn is-yes"
+                    onClick={onEnterNow}
+                  >
+                    {copy.confirmYes}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                className={`lg-enter-now${canEnterNow ? ' is-visible' : ''}`}
+                type="button"
+                onClick={() => setConfirmingSkip(true)}
+                tabIndex={canEnterNow ? 0 : -1}
+                aria-hidden={!canEnterNow}
+              >
+                {copy.enter}
+              </button>
+            )}
           </div>
         </div>
 
