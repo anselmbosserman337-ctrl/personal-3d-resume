@@ -27,9 +27,13 @@ export default function LanguageGate({ onChoose }: { onChoose: (lang: Lang) => v
 
         <div className="lang-gate-tip" role="note">
           <span className="lg-tip-label">温馨提示</span>
-          <span className="lg-tip-text">您好！本网站使用了 3D 建模技术，网页加载较慢，可刷新重试。</span>
+          <span className="lg-tip-text">
+            您好！本网站使用了 3D 建模技术，并带有随页面滚动播放的人物动画，每个动画的镜头切换都对应相应的贴纸与介绍内容。由于内容较多，网页打开可能较慢，若加载卡顿可刷新重试。
+          </span>
           <span className="lg-tip-text-en">
-            Tip: This site uses 3D modeling, so loading may be slow — feel free to refresh if it stalls.
+            Hello! This site uses 3D modeling and features character animations that play as you scroll. Each
+            scene's camera movement corresponds to its matching stickers and descriptions. With so much content,
+            the page may load slowly — feel free to refresh if it stalls.
           </span>
         </div>
 

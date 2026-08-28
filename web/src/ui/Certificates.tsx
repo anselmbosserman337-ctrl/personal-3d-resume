@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { CERTIFICATES, type Certificate, type Language } from '../data/certificates'
-import CertificateModal from './CertificateModal'
+
+const CertificateModal = lazy(() => import('./CertificateModal'))
 
 const COPY = {
   zh: {
@@ -253,15 +254,19 @@ export default function Certificates({ lang }: { lang: Language }) {
         </ul>
       </div>
 
-      <CertificateModal
-        certificate={activeCertificate}
-        index={activeIndex ?? 0}
-        total={CERTIFICATES.length}
-        lang={lang}
-        onClose={() => setActiveIndex(null)}
-        onPrevious={() => changeActive(-1)}
-        onNext={() => changeActive(1)}
-      />
+      {activeCertificate && (
+        <Suspense fallback={null}>
+          <CertificateModal
+            certificate={activeCertificate}
+            index={activeIndex ?? 0}
+            total={CERTIFICATES.length}
+            lang={lang}
+            onClose={() => setActiveIndex(null)}
+            onPrevious={() => changeActive(-1)}
+            onNext={() => changeActive(1)}
+          />
+        </Suspense>
+      )}
     </section>
   )
 }

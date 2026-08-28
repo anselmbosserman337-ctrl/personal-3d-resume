@@ -5,9 +5,12 @@ import { EffectComposer, Bloom, DepthOfField, SMAA } from '@react-three/postproc
 import * as THREE from 'three'
 import Env from './Env'
 import { FOCUS_POINTS, FRAMES_PER_NODE } from '../data/focusPoints'
+import { HERO_BACKGROUND_URL } from '../performanceAssets'
 
-const MODEL_URL = `${import.meta.env.BASE_URL}models/me_meshopt.glb`
-const HERO_BACKGROUND_URL = `${import.meta.env.BASE_URL}scrapbook/hero-scrapbook-full.webp`
+// Balanced is the production default. The untouched original remains available
+// as a build-time fallback: VITE_MODEL_FILE=models/me_meshopt.glb npm run build.
+const MODEL_FILE = import.meta.env.VITE_MODEL_FILE || 'models/me_meshopt_balanced.glb'
+const MODEL_URL = `${import.meta.env.BASE_URL}${MODEL_FILE}`
 
 useGLTF.preload(MODEL_URL, false, true)
 
@@ -96,15 +99,6 @@ function Lights() {
 
   return (
     <>
-      <Env
-        intensity={c.envIntensity}
-        rotationX={0}
-        rotationY={0}
-        rotationZ={0}
-        asBackground={false}
-        bgIntensity={0.4}
-        bgBlur={0}
-      />
       <hemisphereLight args={[c.hemiSky, c.hemiGround, c.hemiIntensity]} />
       <directionalLight
         position={c.keyPos}
@@ -118,17 +112,48 @@ function Lights() {
   )
 }
 
+function EnvironmentFallbackLight() {
+  const light = useRef<THREE.AmbientLight>(null)
+  const scene = useThree((state) => state.scene)
+
+  useFrame(() => {
+    if (!light.current) return
+    const envMix = THREE.MathUtils.clamp(scene.environmentIntensity / 0.85, 0, 1)
+    light.current.intensity = 1.15 * (1 - envMix)
+  })
+
+  return <ambientLight ref={light} color="#f4eaff" intensity={1.15} />
+}
+
+// HDR runs in its own Suspense boundary so it can enhance the final material
+// response when ready without delaying the first visible frame of the model.
+function EnvironmentLight() {
+  return (
+    <Env
+      intensity={0.85}
+      rotationX={0}
+      rotationY={0}
+      rotationZ={0}
+      asBackground={false}
+      bgIntensity={0.4}
+      bgBlur={0}
+    />
+  )
+}
+
 // me.glb：模型 + glb 自带相机动画（滚动分 5 段擦除）+ 自动对焦 + 眼睛跟随
 function Man2({
   focusRef,
   frameRef,
   dofBokehRef,
   dofRangeRef,
+  onReady,
 }: {
   focusRef: MutableRefObject<THREE.Vector3>
   frameRef: MutableRefObject<number>
   dofBokehRef: MutableRefObject<number>
   dofRangeRef: MutableRefObject<number>
+  onReady: () => void
 }) {
   const posX = 0
   const posY = 0.4
@@ -234,6 +259,14 @@ function Man2({
       },
     }
   }, [scene])
+
+  // useGLTF has resolved and the preserved scene hierarchy has been cloned.
+  // Signal on the next paint so UI fades are tied to the real model, not the
+  // global LoadingManager's potentially staged 100% value.
+  useEffect(() => {
+    const frame = requestAnimationFrame(onReady)
+    return () => cancelAnimationFrame(frame)
+  }, [onReady])
 
   // 相机动画总帧数：从 CameraAction clip 读（回退到最长 clip / 默认履历+入场+横移），不写死。
   // 作品区帧段 = [RESUME_FRAMES, totalFrames]，长度随 glb 而定（当前 me.glb 为 100 帧）。
@@ -586,7 +619,7 @@ function Post2({
 }
 
 // 场景根组件：展示 me.glb（相机由 glb 动画 + 滚动驱动）
-export default function Scene() {
+export default function Scene({ onModelReady }: { onModelReady: () => void }) {
   const focusRef = useRef(new THREE.Vector3(0, 1.3, 0))
   const frameRef = useRef(0)
   // 逐锚点景深（intro3d 导出的 glb 携带）：Man2 每帧写、Post2 读。dofBokeh=-1 表示无参数 → Post2 走旧全局混合。
@@ -596,9 +629,21 @@ export default function Scene() {
     <>
       <GradientBackground />
 
+      <Lights />
+      <EnvironmentFallbackLight />
+
       <Suspense fallback={null}>
-        <Lights />
-        <Man2 focusRef={focusRef} frameRef={frameRef} dofBokehRef={dofBokehRef} dofRangeRef={dofRangeRef} />
+        <EnvironmentLight />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <Man2
+          focusRef={focusRef}
+          frameRef={frameRef}
+          dofBokehRef={dofBokehRef}
+          dofRangeRef={dofRangeRef}
+          onReady={onModelReady}
+        />
       </Suspense>
 
       <Post2 focusRef={focusRef} frameRef={frameRef} dofBokehRef={dofBokehRef} dofRangeRef={dofRangeRef} />

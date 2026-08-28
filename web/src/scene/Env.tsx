@@ -1,7 +1,10 @@
-import { useEffect, useRef } from 'react'
-import { useThree, useLoader } from '@react-three/fiber'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useThree, useFrame } from '@react-three/fiber'
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js'
 import * as THREE from 'three'
+
+const ENV_URL = `${import.meta.env.BASE_URL}textures/env_lite.hdr`
+const ENV_FALLBACK_URL = `${import.meta.env.BASE_URL}textures/env.hdr`
 
 // env.hdr 作为光照 / 反射环境（IBL），并可选作为可见背景（替代 Sky.jsx 天空球）。
 // three r163+ 原生支持 scene.environmentRotation / scene.backgroundRotation。
@@ -23,7 +26,31 @@ export default function Env({
   bgBlur: number
 }) {
   const scene = useThree((s) => s.scene)
-  const texture = useLoader(RGBELoader, `${import.meta.env.BASE_URL}textures/env.hdr`)
+  const [texture, setTexture] = useState<THREE.DataTexture | null>(null)
+  const environmentBlend = useRef(0)
+
+  // Keep the original HDR as an automatic runtime fallback. RGBELoader uses
+  // Three's DefaultLoadingManager, so the progress indicator remains accurate.
+  useEffect(() => {
+    let cancelled = false
+    let loadedTexture: THREE.DataTexture | null = null
+    const loader = new RGBELoader()
+    const accept = (nextTexture: THREE.DataTexture) => {
+      if (cancelled) {
+        nextTexture.dispose()
+        return
+      }
+      loadedTexture = nextTexture
+      setTexture(nextTexture)
+    }
+    loader.load(ENV_URL, accept, undefined, () => {
+      loader.load(ENV_FALLBACK_URL, accept)
+    })
+    return () => {
+      cancelled = true
+      loadedTexture?.dispose()
+    }
+  }, [])
 
   // 记录接管前的背景（App.jsx 里设的深色），关闭 asBackground 时恢复。
   const initialBg = useRef<any>(null)
@@ -32,20 +59,29 @@ export default function Env({
   }, [scene])
 
   // 作为光照/反射环境
-  useEffect(() => {
+  useLayoutEffect(() => {
+    if (!texture) return
     texture.mapping = THREE.EquirectangularReflectionMapping
+    environmentBlend.current = 0
+    scene.environmentIntensity = 0
     scene.environment = texture
     return () => {
       scene.environment = null
+      scene.environmentIntensity = 0
     }
   }, [scene, texture])
 
-  useEffect(() => {
-    scene.environmentIntensity = intensity
-  }, [scene, intensity])
+  // Cross-fade IBL after the texture resolves. The model is already visible
+  // under the unchanged hemisphere/directional fallback lights, so HDR never
+  // blocks it and never causes a one-frame exposure jump.
+  useFrame((_, delta) => {
+    environmentBlend.current = THREE.MathUtils.damp(environmentBlend.current, 1, 4.5, delta)
+    scene.environmentIntensity = intensity * environmentBlend.current
+  })
 
   // 旋转：同一组欧拉角(度→弧度)同时驱动环境反射与背景朝向
   useEffect(() => {
+    if (!texture) return
     const x = THREE.MathUtils.degToRad(rotationX)
     const y = THREE.MathUtils.degToRad(rotationY)
     const z = THREE.MathUtils.degToRad(rotationZ)
@@ -55,6 +91,7 @@ export default function Env({
 
   // 作为可见背景
   useEffect(() => {
+    if (!texture) return
     scene.background = asBackground ? texture : initialBg.current
     return () => {
       scene.background = initialBg.current

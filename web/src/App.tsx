@@ -1,6 +1,5 @@
-import { Suspense, useEffect, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { useProgress } from '@react-three/drei'
 import { motion, useScroll, useTransform, type MotionValue } from 'framer-motion'
 import * as THREE from 'three'
 import Scene from './scene/Scene'
@@ -39,16 +38,7 @@ function Backdrop() {
   )
 }
 
-function SceneBackground() {
-  const { progress } = useProgress()
-  const [ready, setReady] = useState(false)
-
-  useEffect(() => {
-    if (progress < 100) return
-    const frame = requestAnimationFrame(() => setReady(true))
-    return () => cancelAnimationFrame(frame)
-  }, [progress])
-
+function SceneBackground({ modelReady, onModelReady }: { modelReady: boolean; onModelReady: () => void }) {
   return (
     <>
       <div className="scene-bg">
@@ -60,11 +50,11 @@ function SceneBackground() {
         >
           <Suspense fallback={null}>
             <Backdrop />
-            <Scene />
+            <Scene onModelReady={onModelReady} />
           </Suspense>
         </Canvas>
       </div>
-      <div className={`scene-loading-wash${ready ? ' is-hidden' : ''}`} aria-hidden="true" />
+      <div className={`scene-loading-wash${modelReady ? ' is-hidden' : ''}`} aria-hidden="true" />
     </>
   )
 }
@@ -153,6 +143,8 @@ export default function App() {
   const [lang, setLang] = useState<Lang>(stored ?? 'zh')
   // 首次访问（localStorage 无记录）才弹语言门；记住选择后默认不再弹。
   const [showGate, setShowGate] = useState<boolean>(stored === null)
+  const [modelReady, setModelReady] = useState(false)
+  const handleModelReady = useCallback(() => setModelReady(true), [])
   const { scrollY } = useScroll()
 
   // 首屏强制顶部：修复刷新 / 带旧 hash 深链导致的「自动跳到底部」Bug。
@@ -217,10 +209,10 @@ export default function App() {
   return (
     <>
       {/* 加载遮罩：模型全部加载完成前覆盖全屏，完成后淡出 */}
-      <LoadingScreen />
+      <LoadingScreen ready={modelReady} />
 
       {/* 固定的 3D 背景 */}
-      <SceneBackground />
+      <SceneBackground modelReady={modelReady} onModelReady={handleModelReady} />
 
       {/* 滚动渐暗蒙层 */}
       <motion.div className="scrim" style={{ opacity: scrimOpacity }} aria-hidden="true" />

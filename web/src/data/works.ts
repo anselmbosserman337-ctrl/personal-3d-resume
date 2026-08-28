@@ -188,11 +188,11 @@ export const WORKS: Record<'zh' | 'en', WorksLang> = {
 // 板块配图（横向画廊每张卡片左侧的整高封面）。放到 public/works/covers/ 下。
 // 缺图时左栏用大编号渐变占位，放入图片后自动点亮。
 export const SECTION_COVERS: Record<string, string> = {
-  economics: `${import.meta.env.BASE_URL}works/covers/economics.png`,
-  ai: `${import.meta.env.BASE_URL}works/covers/ai.png`,
-  programming: `${import.meta.env.BASE_URL}works/covers/expression.png`,
-  expression: `${import.meta.env.BASE_URL}works/covers/expression-writing-image-one.png`,
-  'game-dev': `${import.meta.env.BASE_URL}works/nova/gallery-composite.jpg`,
+  economics: `${import.meta.env.BASE_URL}works/optimized/economics-cover.webp`,
+  ai: `${import.meta.env.BASE_URL}works/optimized/ai-cover.webp`,
+  programming: `${import.meta.env.BASE_URL}works/optimized/programming-cover.webp`,
+  expression: `${import.meta.env.BASE_URL}works/optimized/expression-writing-cover.webp`,
+  'game-dev': `${import.meta.env.BASE_URL}works/optimized/project-nova-cover.webp`,
 }
 
 // 统计一个板块的作品数（items 或 groups 求和），用于索引行 hover 显示
