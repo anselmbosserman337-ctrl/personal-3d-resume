@@ -13,9 +13,12 @@ dist-ssr
 public/works/*
 !public/works/covers/
 !public/works/nova/
+!public/works/optimized/
+!public/works/optimized/**
 
 # 压缩脚本日志
 scripts/compress-media.log
+scripts/__pycache__/
 
 # esbuild 本地安装缓存
 esbuild-win32-x64-0.21.5.tgz
