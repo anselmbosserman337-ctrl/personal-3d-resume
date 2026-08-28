@@ -1,5 +1,6 @@
 ---
 title: AI 探索
+banner: /works/covers/ai.png
 year: 2026 -
 role: 学习方向
 tags: [AI 应用, 提示词, 学习效率]

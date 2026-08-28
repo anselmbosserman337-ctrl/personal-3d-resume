@@ -1,5 +1,6 @@
 ---
 title: 表达与写作
+banner: /works/covers/expression-writing-image-one.png
 year: 2026 -
 role: 学习方向
 tags: [写作, 英语, 沟通协作]

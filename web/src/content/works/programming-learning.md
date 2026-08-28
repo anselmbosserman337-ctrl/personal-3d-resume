@@ -1,5 +1,6 @@
 ---
 title: 编程学习
+banner: /works/covers/programming.png
 year: 2026 -
 role: 学习方向
 tags: [C Language, Python, 逻辑思维]
