@@ -7,7 +7,19 @@ type Lang = 'en' | 'zh'
 // - 与 3D 加载并行：门显示期间，背景的 glb / Meshopt 解码 / HDR 场景继续在后台初始化。
 // - 真实 <button>，清晰文字「中文 / English」，首屏聚焦第一个按钮；ESC 不关闭（必须选择）。
 // - 门只是 UI 层，绝不重新初始化 / 销毁 Three.js 场景。
-export default function LanguageGate({ onChoose }: { onChoose: (lang: Lang) => void }) {
+// - 点选后：被点按钮约 300–450ms 确认反馈（is-confirming）→ 数字手帐翻页（is-turning）。
+//   翻页全程纯 CSS transform/opacity，零新资源；翻页期间极短暂显示一句状态文案（无 % / MB / 技术名词）。
+export default function LanguageGate({
+  onChoose,
+  confirming,
+  turning,
+  lang,
+}: {
+  onChoose: (lang: Lang) => void
+  confirming: Lang | null
+  turning: boolean
+  lang: Lang
+}) {
   const zhRef = useRef<HTMLButtonElement>(null)
 
   // 打开时把焦点放到第一个语言按钮，方便键盘用户
@@ -15,8 +27,16 @@ export default function LanguageGate({ onChoose }: { onChoose: (lang: Lang) => v
     zhRef.current?.focus()
   }, [])
 
+  // 翻页期间的极短暂状态文案：仅一句，随当前所选语言切换；不阻塞、不拖延。
+  const openingText = lang === 'en' ? 'Opening the scrapbook…' : '正在翻开这本数字手帐…'
+
   return (
-    <div className="lang-gate" role="dialog" aria-modal="true" aria-labelledby="lg-title">
+    <div
+      className={`lang-gate${turning ? ' is-turning' : ''}`}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="lg-title"
+    >
       <div className="lang-gate-journal">
         <span className="lang-gate-tape" aria-hidden="true" />
         <p className="lang-gate-kicker">PORTFOLIO · 2026</p>
@@ -41,21 +61,34 @@ export default function LanguageGate({ onChoose }: { onChoose: (lang: Lang) => v
           <button
             ref={zhRef}
             type="button"
-            className="lang-gate-btn is-zh"
+            className={`lang-gate-btn is-zh${confirming === 'zh' ? ' is-confirming' : ''}`}
             onClick={() => onChoose('zh')}
+            disabled={turning}
+            aria-pressed={confirming === 'zh'}
           >
             <span className="lg-btn-main">中文</span>
             <span className="lg-btn-sub">简体中文</span>
           </button>
           <button
             type="button"
-            className="lang-gate-btn is-en"
+            className={`lang-gate-btn is-en${confirming === 'en' ? ' is-confirming' : ''}`}
             onClick={() => onChoose('en')}
+            disabled={turning}
+            aria-pressed={confirming === 'en'}
           >
             <span className="lg-btn-main">English</span>
             <span className="lg-btn-sub">English</span>
           </button>
         </div>
+
+        {/* 翻页期间极短暂显示（prefers-reduced-motion 下同样只是淡入，不旋转）。
+            非翻页时保持不可见、不占高度，避免首屏留白。 */}
+        <p
+          className={`lang-gate-opening${turning ? ' is-shown' : ''}`}
+          aria-hidden={turning ? undefined : true}
+        >
+          {openingText}
+        </p>
 
         <p className="lang-gate-hint" aria-hidden="true">
           选择后将从首页顶部进入 · Choose to enter from the top

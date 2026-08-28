@@ -1,8 +1,5 @@
-import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
-import { Canvas } from '@react-three/fiber'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { motion, useScroll, useTransform, type MotionValue } from 'framer-motion'
-import * as THREE from 'three'
-import Scene from './scene/Scene'
 import NoiseOverlay from './ui/NoiseOverlay'
 import Resume from './ui/Resume'
 import Skills from './ui/Skills'
@@ -10,9 +7,11 @@ import Works from './ui/Works'
 import Certificates from './ui/Certificates'
 import Contact from './ui/Contact'
 import Navigation from './ui/Navigation'
-import LoadingScreen from './ui/LoadingScreen'
 import LanguageGate from './ui/LanguageGate'
-import { useStore } from './store'
+
+// WebGL scene is code-split so the Language Gate paints before the heavy
+// three / @react-three bundle finishes downloading.
+const SceneStage = lazy(() => import('./scene/SceneStage'))
 
 // 语言记忆：仅用简单的 zh / en。首次访问（无此 key）弹语言门；之后记住选择，
 // 但仍保留「更改语言」入口。不会机翻整份简历——英文文案本就已存在于各数据源。
@@ -25,38 +24,6 @@ function readStoredLang(): Lang | null {
   } catch {
     return null
   }
-}
-
-function Backdrop() {
-  // 点击空白处收起详情
-  const setActive = useStore((s) => s.setActive)
-  return (
-    <mesh position={[0, 0, -40]} onClick={() => setActive(null)}>
-      <planeGeometry args={[600, 300]} />
-      <meshBasicMaterial transparent opacity={0} depthWrite={false} />
-    </mesh>
-  )
-}
-
-function SceneBackground({ modelReady, onModelReady }: { modelReady: boolean; onModelReady: () => void }) {
-  return (
-    <>
-      <div className="scene-bg">
-        <Canvas
-          shadows={{ type: THREE.PCFShadowMap }}
-          dpr={[1, 1.5]}
-          camera={{ position: [0, 5, 19], fov: 39, near: 0.1, far: 500 }}
-          gl={{ alpha: true, antialias: false, stencil: false, depth: true, toneMapping: THREE.ACESFilmicToneMapping }}
-        >
-          <Suspense fallback={null}>
-            <Backdrop />
-            <Scene onModelReady={onModelReady} />
-          </Suspense>
-        </Canvas>
-      </div>
-      <div className={`scene-loading-wash${modelReady ? ' is-hidden' : ''}`} aria-hidden="true" />
-    </>
-  )
 }
 
 type Lang = 'en' | 'zh'
@@ -143,9 +110,13 @@ export default function App() {
   const [lang, setLang] = useState<Lang>(stored ?? 'zh')
   // 首次访问（localStorage 无记录）才弹语言门；记住选择后默认不再弹。
   const [showGate, setShowGate] = useState<boolean>(stored === null)
+  // 翻页入场状态：confirming = 用户点中的语言（按钮确认反馈），turning = 数字手帐翻页中。
+  const [confirming, setConfirming] = useState<Lang | null>(null)
+  const [turning, setTurning] = useState(false)
   const [modelReady, setModelReady] = useState(false)
   const handleModelReady = useCallback(() => setModelReady(true), [])
   const { scrollY } = useScroll()
+  const turnTimers = useRef<number[]>([])
 
   // 首屏强制顶部：修复刷新 / 带旧 hash 深链导致的「自动跳到底部」Bug。
   // 与 PROJECT NOVA Case Study 的 savedY 自恢复无关（那套是显式 JS 控制，不会受影响）。
@@ -165,20 +136,42 @@ export default function App() {
     }
   }, [showGate])
 
-  // 选择语言 = 以 HOME/Hero 顶部重新进入（即便 3D 未就绪，Hero 文本/背景会先出现）。
+  // 选择语言：先给按钮约 300–450ms 确认反馈，再开始约 0.7–1.1s 的数字手帐翻页，
+  // 翻页结束后立刻进入 Hero。全程【不等待 3D】、【不人为拖延】——若 3D 未就绪，
+  // Hero 正常先显示，人物在 modelReady 后再平滑 fade-in。
   const chooseLang = (l: Lang) => {
+    if (confirming) return // 防重复触发
     try {
       localStorage.setItem(LS_LANG, l)
     } catch {
       /* 忽略隐私模式下的写入失败 */
     }
     setLang(l)
-    setShowGate(false)
-    window.scrollTo(0, 0)
+    setConfirming(l)
+    const reduce =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true
+    const feedback = reduce ? 160 : 380
+    const turn = reduce ? 300 : 920
+    const t1 = window.setTimeout(() => {
+      setConfirming(null)
+      setTurning(true)
+      window.scrollTo(0, 0)
+      const t2 = window.setTimeout(() => {
+        setShowGate(false)
+        setTurning(false)
+      }, turn)
+      turnTimers.current.push(t2)
+    }, feedback)
+    turnTimers.current.push(t1)
   }
 
-  // 「更改语言」入口：重新打开语言门，同样锁顶并落到 Hero。
+  // 「更改语言」入口：重新打开语言门（同样锁顶、落到 Hero），翻页逻辑照常兼容。
   const openGate = () => {
+    setConfirming(null)
+    setTurning(false)
+    turnTimers.current.forEach((t) => window.clearTimeout(t))
+    turnTimers.current = []
     window.scrollTo(0, 0)
     setShowGate(true)
   }
@@ -208,11 +201,12 @@ export default function App() {
 
   return (
     <>
-      {/* 加载遮罩：模型全部加载完成前覆盖全屏，完成后淡出 */}
-      <LoadingScreen ready={modelReady} />
-
-      {/* 固定的 3D 背景 */}
-      <SceneBackground modelReady={modelReady} onModelReady={handleModelReady} />
+      {/* 固定的 3D 背景（代码分割：three 包延后下载，语言门先出现）。
+          模型就绪后 scene-loading-wash 平滑淡出 = 人物 fade-in；HDR 由 Env 自行淡入，
+          均不阻塞 Hero。 */}
+      <Suspense fallback={null}>
+        <SceneStage modelReady={modelReady} onModelReady={handleModelReady} />
+      </Suspense>
 
       {/* 滚动渐暗蒙层 */}
       <motion.div className="scrim" style={{ opacity: scrimOpacity }} aria-hidden="true" />
@@ -234,8 +228,11 @@ export default function App() {
         aria-hidden="true"
       /> */}
 
-      {/* 语言门：首次访问或「更改语言」时显示，覆盖在加载遮罩之上；3D 在背后并行加载 */}
-      {showGate && <LanguageGate onChoose={chooseLang} />}
+      {/* 语言门：首次访问或「更改语言」时显示，覆盖在最上层；3D 在背后并行加载。
+          点选语言 → 按钮确认反馈 → 数字手帐翻页 → 揭开已就位的 Hero。 */}
+      {showGate && (
+        <LanguageGate onChoose={chooseLang} confirming={confirming} turning={turning} lang={lang} />
+      )}
 
       {/* 记住语言后的常驻「更改语言」入口（不强制每次刷新都弹） */}
       {!showGate && <LangToggle lang={lang} onToggle={openGate} />}

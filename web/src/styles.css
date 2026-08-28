@@ -639,8 +639,7 @@ canvas {
 html,
 body,
 #root,
-.loader,
-.loading-screen {
+.loader {
   background: #eef0ff;
 }
 
@@ -1632,29 +1631,7 @@ body,
   gap: 0.6em;
 }
 
-/* ---------- 3D 加载指示：不遮挡首屏文字 ---------- */
-.loading-screen {
-  position: fixed;
-  top: clamp(18px, 3vw, 32px);
-  right: clamp(18px, 3vw, 32px);
-  z-index: 20;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: clamp(38px, 5vw, 48px);
-  height: clamp(38px, 5vw, 48px);
-  border: 1px solid rgba(139, 124, 255, 0.24);
-  border-radius: 50%;
-  background: rgba(238, 240, 255, 0.62);
-  opacity: 1;
-  transition: opacity 0.6s ease;
-  pointer-events: none;
-}
-
-.loading-screen.is-hidden {
-  opacity: 0;
-  pointer-events: none;
-}
+/* ---------- 3D 加载指示：已由代码分割 + 翻页入场取代，不再需要独立圆环 ---------- */
 
 .loading-ring {
   width: 26px;
@@ -2441,8 +2418,7 @@ body,
 html,
 body,
 #root,
-.loader,
-.loading-screen {
+.loader {
   background: var(--bg-deep);
   color: var(--text-primary);
 }
@@ -4757,6 +4733,79 @@ body,
   background:
     radial-gradient(58% 58% at 50% 38%, rgba(228, 217, 250, 0.55), transparent 72%),
     linear-gradient(158deg, #efeafc 0%, #e6def7 54%, #dccff3 100%);
+}
+
+/* —— 数字手帐翻页（CSS / DOM only，零新资源）——
+   铰链在左、向右外翻：rotateY 配合 perspective，露出底层已就位的 Hero。
+   全程仅 transform / opacity，GPU 友好，移动端不会横向溢出。 */
+.lang-gate {
+  transform-origin: left center;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* 翻页进行中：整张封面绕左铰链旋转并淡出（App 控制时长 ≈920ms）。
+   此节点的 transition 与 App 的 setTimeout 时长保持一致，避免动画被打断。 */
+.lang-gate.is-turning {
+  transform: perspective(1700px) rotateY(-118deg);
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+  transition:
+    transform 0.92s cubic-bezier(0.45, 0.02, 0.18, 1),
+    opacity 0.92s ease;
+}
+
+/* 语言按钮确认反馈（≈300–450ms）：轻微按压缩小 + 描边高亮 + ✓，不做夸张动画。 */
+.lang-gate-btn.is-confirming {
+  transform: scale(0.97);
+  border-color: #7c5fb4;
+  background: linear-gradient(180deg, #f0e9fb 0%, #e6dcf6 100%);
+  box-shadow:
+    0 6px 18px rgba(124, 95, 180, 0.28),
+    inset 0 0 0 2px rgba(124, 95, 180, 0.5);
+}
+
+.lang-gate-btn.is-confirming .lg-btn-main::after {
+  content: ' ✓';
+  margin-left: 2px;
+  font-size: 14px;
+  color: #7c5fb4;
+}
+
+/* 翻页期间极短暂的状态文案：默认折叠不可见，翻页时淡入。无 % / MB / 技术名词。 */
+.lang-gate-opening {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: #7c5fb4;
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transform: translateY(6px);
+  transition: opacity 0.3s ease, transform 0.3s ease, max-height 0.3s ease, margin 0.3s ease;
+}
+
+.lang-gate-opening.is-shown {
+  opacity: 1;
+  max-height: 28px;
+  margin-top: 16px;
+  transform: translateY(0);
+}
+
+/* 尊重「减少动态效果」：翻页退化为纯淡出，按钮确认不做缩放。 */
+@media (prefers-reduced-motion: reduce) {
+  .lang-gate.is-turning {
+    transform: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .lang-gate-btn.is-confirming {
+    transform: none;
+  }
+  .lang-gate-opening {
+    transition: opacity 0.3s ease, max-height 0.3s ease, margin 0.3s ease;
+  }
 }
 
 .lang-gate-journal {
