@@ -6,11 +6,14 @@ import * as THREE from 'three'
 const ENV_URL = `${import.meta.env.BASE_URL}textures/env_lite.hdr`
 const ENV_FALLBACK_URL = `${import.meta.env.BASE_URL}textures/env.hdr`
 
-// 与 Scene.tsx 的模型预取对齐：模块求值阶段就开始下载 HDR，使其与语言门并行。
-// 浏览器 HTTP 缓存会让组件内后续的 RGBELoader.load 直接命中，不重复下载。
-if (typeof window !== 'undefined') {
-  new RGBELoader().load(ENV_URL, () => {}, undefined, () => {})
-}
+const loadTexture = (url: string) =>
+  new Promise<THREE.DataTexture>((resolve, reject) => {
+    new RGBELoader().load(url, resolve, undefined, reject)
+  })
+
+// Start one shared download/decode during module evaluation. The mounted
+// component consumes this exact texture, avoiding a second RGBE decode.
+const environmentTexturePromise = loadTexture(ENV_URL).catch(() => loadTexture(ENV_FALLBACK_URL))
 
 // env.hdr 作为光照 / 反射环境（IBL），并可选作为可见背景（替代 Sky.jsx 天空球）。
 // three r163+ 原生支持 scene.environmentRotation / scene.backgroundRotation。
@@ -40,7 +43,6 @@ export default function Env({
   useEffect(() => {
     let cancelled = false
     let loadedTexture: THREE.DataTexture | null = null
-    const loader = new RGBELoader()
     const accept = (nextTexture: THREE.DataTexture) => {
       if (cancelled) {
         nextTexture.dispose()
@@ -49,9 +51,7 @@ export default function Env({
       loadedTexture = nextTexture
       setTexture(nextTexture)
     }
-    loader.load(ENV_URL, accept, undefined, () => {
-      loader.load(ENV_FALLBACK_URL, accept)
-    })
+    environmentTexturePromise.then(accept).catch(() => {})
     return () => {
       cancelled = true
       loadedTexture?.dispose()
