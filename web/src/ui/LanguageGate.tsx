@@ -11,6 +11,7 @@ const COPY = {
     preparing: '正在准备数字手帐…',
     portrait: '正在加载 3D 形象…',
     atmosphere: '正在准备场景光影…',
+    images: '正在装载手帐图片…',
     almost: '马上就好…',
     ready: '准备完成。',
     partial: '部分内容仍在加载',
@@ -22,6 +23,7 @@ const COPY = {
     preparing: 'Preparing the scrapbook…',
     portrait: 'Loading the 3D portrait…',
     atmosphere: 'Preparing the atmosphere…',
+    images: 'Loading the scrapbook images…',
     almost: 'Almost ready…',
     ready: 'Ready.',
     partial: 'Some content is still loading',
@@ -42,6 +44,7 @@ function getStatus(
   if (!critical.resources.model.ready) return copy.portrait
   if (!critical.resources.environment.ready) return copy.atmosphere
   if (!critical.resources.hero.ready) return copy.preparing
+  if (!critical.resources.images.ready) return copy.images
   return copy.almost
 }
 

@@ -102,8 +102,9 @@ export default function App() {
     return () => window.cancelAnimationFrame(frame)
   }, [critical.progress, entranceReady])
 
+  // 兜底：等待内容变多（全站图片 + 3D），给慢网访客一个自行跳过的入口
   useEffect(() => {
-    const timer = window.setTimeout(() => setSlowEscape(true), 8_000)
+    const timer = window.setTimeout(() => setSlowEscape(true), 12_000)
     return () => window.clearTimeout(timer)
   }, [])
 
