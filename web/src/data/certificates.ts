@@ -73,6 +73,15 @@ export const CERTIFICATES: Certificate[] = [
     original: `${base}certificates/originals/certificate-ai4s-python.webp`,
   },
   {
+    id: 'rag-engineer-iflytek',
+    title: { zh: 'RAG 工程师认证', en: 'RAG Engineer Certification' },
+    issuer: '科大讯飞 AI 大学堂 · iFLYTEK AI Academy',
+    category: { zh: '检索增强生成', en: 'Retrieval-Augmented Generation' },
+    date: { zh: '颁发于 2026.09.04', en: 'Issued 2026.09.04' },
+    thumbnail: `${base}certificates/thumbs/certificate-rag-engineer-iflytek.webp`,
+    original: `${base}certificates/originals/certificate-rag-engineer-iflytek.webp`,
+  },
+  {
     id: 'prompt-engineer-iflytek',
     title: { zh: 'Prompt 工程师认证', en: 'Prompt Engineer Certification' },
     issuer: '科大讯飞 AI 大学堂',
